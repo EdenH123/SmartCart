@@ -2,6 +2,9 @@
   "name": "basketwise",
   "version": "0.1.0",
   "private": true,
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "description": "Compare your grocery basket across supermarkets",
   "scripts": {
     "dev": "next dev",
