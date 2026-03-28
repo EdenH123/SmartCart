@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/db/client';
 import { searchCategories, searchProducts, getAllCategories, getCategory } from '@/lib/products/search';
 import { compareBasket } from '@/lib/comparison/engine';
+import { optimizeBasket as optimizeBasketEngine } from '@/lib/recommendations';
 import { createLogger } from '@/lib/logger';
 import type {
   BasketItemDTO,
@@ -10,6 +11,7 @@ import type {
   CategoryWithAttributes,
   ComparisonResult,
   MatchMode,
+  OptimizationResult,
   ProductSearchResult,
   SupermarketDTO,
   UserConstraints,
@@ -290,6 +292,135 @@ export async function compareBasketAction(basketId: string): Promise<ComparisonR
     basketId,
     itemCount: basketItems.length,
     supermarketCount: supermarkets.length,
+    durationMs,
+  });
+
+  return result;
+}
+
+// ── Optimization ──
+
+export async function optimizeBasketAction(basketId: string): Promise<OptimizationResult> {
+  const startTime = Date.now();
+
+  const basketItems = await prisma.basketItem.findMany({
+    where: { basketId },
+    include: { category: true },
+  });
+
+  if (basketItems.length === 0) {
+    return {
+      basketId,
+      supermarketId: '',
+      supermarketName: '',
+      originalTotal: 0,
+      optimizedTotal: 0,
+      savings: 0,
+      savingsPercentage: 0,
+      items: [],
+      recommendations: [],
+    };
+  }
+
+  // Run comparison first to find the best supermarket
+  const comparisonResult = await compareBasketAction(basketId);
+  if (!comparisonResult.bestSupermarketId || comparisonResult.comparisons.length === 0) {
+    return {
+      basketId,
+      supermarketId: '',
+      supermarketName: '',
+      originalTotal: 0,
+      optimizedTotal: 0,
+      savings: 0,
+      savingsPercentage: 0,
+      items: [],
+      recommendations: [],
+    };
+  }
+
+  const bestComparison = comparisonResult.comparisons.find(
+    (c) => c.supermarketId === comparisonResult.bestSupermarketId
+  )!;
+
+  const supermarket = await prisma.supermarket.findUnique({
+    where: { id: comparisonResult.bestSupermarketId },
+  });
+
+  if (!supermarket) {
+    throw new Error('Supermarket not found');
+  }
+
+  // Fetch all products for this supermarket
+  const smProducts = await prisma.supermarketProduct.findMany({
+    where: { supermarketId: supermarket.id },
+    include: {
+      canonicalProduct: true,
+      priceSnapshots: {
+        orderBy: { capturedAt: 'desc' },
+        take: 1,
+      },
+    },
+  });
+
+  const products = smProducts.map((p) => {
+    const latestSnapshot = p.priceSnapshots[0];
+    return {
+      id: p.id,
+      supermarketId: p.supermarketId,
+      canonicalProductId: p.canonicalProductId,
+      externalName: p.externalName,
+      brand: p.brand,
+      price: latestSnapshot?.price ?? p.price,
+      inStock: latestSnapshot?.inStock ?? p.inStock,
+      isPromo: latestSnapshot?.isPromo ?? p.isPromo,
+      promoDescription: latestSnapshot?.promoDescription ?? p.promoDescription,
+      canonicalProduct: {
+        id: p.canonicalProduct.id,
+        categoryId: p.canonicalProduct.categoryId,
+        name: p.canonicalProduct.name,
+        brand: p.canonicalProduct.brand,
+        metadata: JSON.parse(p.canonicalProduct.metadata) as Record<string, unknown>,
+      },
+    };
+  });
+
+  // Build current resolutions from the comparison result
+  const currentResolutions = new Map<string, { product: (typeof products)[number] | null; unitPrice: number }>();
+  for (const itemResult of bestComparison.itemResults) {
+    const matchedProduct = itemResult.supermarketProductId
+      ? products.find((p) => p.id === itemResult.supermarketProductId) ?? null
+      : null;
+    currentResolutions.set(itemResult.basketItemId, {
+      product: matchedProduct,
+      unitPrice: itemResult.unitPrice ?? 0,
+    });
+  }
+
+  const itemsForOptimization = basketItems.map((item) => ({
+    id: item.id,
+    categoryId: item.categoryId,
+    quantity: item.quantity,
+    matchMode: item.matchMode as 'exact' | 'flexible',
+    selectedCanonicalProductId: item.selectedCanonicalProductId,
+    userConstraints: JSON.parse(item.userConstraints) as UserConstraints,
+    displayName: item.displayName,
+  }));
+
+  const result = optimizeBasketEngine(
+    itemsForOptimization,
+    products,
+    { id: supermarket.id, name: supermarket.name, slug: supermarket.slug },
+    currentResolutions
+  );
+  result.basketId = basketId;
+
+  const durationMs = Date.now() - startTime;
+  log.info('Optimization completed', {
+    basketId,
+    supermarketId: supermarket.id,
+    originalTotal: result.originalTotal,
+    optimizedTotal: result.optimizedTotal,
+    savings: result.savings,
     durationMs,
   });
 

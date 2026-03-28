@@ -112,3 +112,65 @@ export interface ProductSearchResult {
   categoryName: string;
   metadata: Record<string, unknown>;
 }
+
+// ── Recommendations ──
+
+export type RecommendationType =
+  | 'cheaper_alternative'
+  | 'promo'
+  | 'constraint_relaxation'
+  | 'quantity';
+
+export interface RecommendationAction {
+  type: 'replace' | 'adjust_quantity' | 'relax_constraint';
+  payload: {
+    newCanonicalProductId?: string;
+    newProductName?: string;
+    newBrand?: string | null;
+    newPrice?: number;
+    newQuantity?: number;
+    constraintKey?: string;
+    constraintOldValue?: string;
+    constraintNewValue?: string;
+  };
+}
+
+export interface Recommendation {
+  id: string;
+  type: RecommendationType;
+  title: string;
+  description: string;
+  impact: {
+    savingsAmount: number;
+    percentage: number;
+  };
+  affectedItems: string[]; // basketItemIds
+  action: RecommendationAction;
+  supermarketId: string;
+  supermarketName: string;
+}
+
+export interface OptimizedItem {
+  basketItemId: string;
+  originalDisplayName: string;
+  optimizedProductName: string;
+  originalUnitPrice: number;
+  optimizedUnitPrice: number;
+  quantity: number;
+  originalTotal: number;
+  optimizedTotal: number;
+  changed: boolean;
+  changeReason: string | null;
+}
+
+export interface OptimizationResult {
+  basketId: string;
+  supermarketId: string;
+  supermarketName: string;
+  originalTotal: number;
+  optimizedTotal: number;
+  savings: number;
+  savingsPercentage: number;
+  items: OptimizedItem[];
+  recommendations: Recommendation[];
+}

@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Trash2, ShoppingCart, ArrowRight, Scale, Minus } from 'lucide-react';
+import { Plus, Trash2, ShoppingCart, ArrowRight, Scale, Minus, Sparkles } from 'lucide-react';
 import {
   getOrCreateBasket,
   getBasketItems,
@@ -87,6 +87,11 @@ function BasketPageInner() {
   const handleCompare = () => {
     if (!basketId) return;
     router.push(`/compare?basketId=${basketId}`);
+  };
+
+  const handleOptimize = () => {
+    if (!basketId) return;
+    router.push(`/optimize?basketId=${basketId}`);
   };
 
   if (loading) {
@@ -204,12 +209,16 @@ function BasketPageInner() {
             ))}
           </div>
 
-          {/* Compare button */}
-          <div className="mt-8">
+          {/* Action buttons */}
+          <div className="mt-8 space-y-3">
             <button onClick={handleCompare} className="btn-primary w-full gap-2 py-3 text-base">
               <Scale className="h-5 w-5" />
               Compare Prices
               <ArrowRight className="h-4 w-4" />
+            </button>
+            <button onClick={handleOptimize} className="w-full inline-flex items-center justify-center gap-2 rounded-lg border-2 border-brand-200 bg-brand-50 py-3 text-base font-semibold text-brand-700 hover:bg-brand-100 transition-colors">
+              <Sparkles className="h-5 w-5" />
+              Optimize My Basket
             </button>
           </div>
         </>
