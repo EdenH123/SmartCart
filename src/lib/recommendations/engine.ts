@@ -123,8 +123,8 @@ function findCheaperAlternatives(
   return [{
     id: nextRecId(),
     type: 'cheaper_alternative',
-    title: `Switch to ${best.brand ?? 'a different brand'} ${item.displayName.split(' ').slice(0, 2).join(' ')}`,
-    description: `Switch from ${currentProduct.externalName} to ${best.externalName} and save $${totalSavings.toFixed(2)}${item.quantity > 1 ? ` (x${item.quantity})` : ''}.`,
+    title: `עברו ל${best.brand ?? 'מותג אחר'} ${item.displayName.split(' ').slice(0, 2).join(' ')}`,
+    description: `עברו מ${currentProduct.externalName} ל${best.externalName} וחסכו ₪${totalSavings.toFixed(2)}${item.quantity > 1 ? ` (x${item.quantity})` : ''}.`,
     impact: { savingsAmount: round2(totalSavings), percentage },
     affectedItems: [item.id],
     action: {
@@ -179,8 +179,8 @@ function findPromoOpportunities(
   return [{
     id: nextRecId(),
     type: 'promo',
-    title: `Use promotion on ${cheapestPromo.externalName}`,
-    description: `${cheapestPromo.promoDescription ?? 'Promotional price available'}. Save $${totalSavings.toFixed(2)} vs regular price.`,
+    title: `נצלו מבצע על ${cheapestPromo.externalName}`,
+    description: `${cheapestPromo.promoDescription ?? 'מחיר מבצע זמין'}. חסכו ₪${totalSavings.toFixed(2)} לעומת מחיר רגיל.`,
     impact: {
       savingsAmount: round2(totalSavings),
       percentage: Math.round((savingsPerUnit / cheapestRegular.price) * 100),
@@ -245,8 +245,8 @@ function findConstraintRelaxations(
     recommendations.push({
       id: nextRecId(),
       type: 'constraint_relaxation',
-      title: `Allow any ${key} for ${item.displayName.split(' ')[0]}`,
-      description: `If you allow any ${key} instead of "${value}", you could get ${best.externalName} and save $${totalSavings.toFixed(2)}.`,
+      title: `אפשרו כל ${key} עבור ${item.displayName.split(' ')[0]}`,
+      description: `אם תאפשרו כל ${key} במקום "${value}", תוכלו לקבל ${best.externalName} ולחסוך ₪${totalSavings.toFixed(2)}.`,
       impact: {
         savingsAmount: round2(totalSavings),
         percentage: Math.round((savingsPerUnit / currentProduct.price) * 100),
@@ -323,8 +323,8 @@ function findQuantitySuggestions(
     recommendations.push({
       id: nextRecId(),
       type: 'quantity',
-      title: `Buy ${suggestedQty} to use promotion`,
-      description: `Buy ${suggestedQty} instead of ${item.quantity} of ${promo.externalName} (${promo.promoDescription}) and save $${savings.toFixed(2)} vs regular price.`,
+      title: `קנו ${suggestedQty} לניצול מבצע`,
+      description: `קנו ${suggestedQty} במקום ${item.quantity} של ${promo.externalName} (${promo.promoDescription}) וחסכו ₪${savings.toFixed(2)} לעומת מחיר רגיל.`,
       impact: {
         savingsAmount: round2(savings),
         percentage: Math.round((savings / regularCostForQty) * 100),
@@ -455,9 +455,9 @@ export function optimizeBasket(
     if (changed) {
       const saved = origItemTotal - optItemTotal;
       if (saved > 0) {
-        changeReason = `Switched to ${best.externalName} (save $${saved.toFixed(2)})`;
+        changeReason = `הוחלף ל${best.externalName} (חיסכון ₪${saved.toFixed(2)})`;
       } else {
-        changeReason = `Switched to ${best.externalName}`;
+        changeReason = `הוחלף ל${best.externalName}`;
       }
     }
 

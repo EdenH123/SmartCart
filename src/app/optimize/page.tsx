@@ -66,7 +66,7 @@ function OptimizePageInner() {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-100">
             <Sparkles className="h-6 w-6 text-brand-500 animate-pulse" />
           </div>
-          <p className="mt-4 text-sm font-medium text-gray-500">Optimizing your basket...</p>
+          <p className="mt-4 text-sm font-medium text-gray-500">ממטב את הסל שלכם...</p>
           <div className="mx-auto mt-2 h-4 w-64 rounded bg-gray-200" />
         </div>
       </div>
@@ -77,10 +77,10 @@ function OptimizePageInner() {
     return (
       <div className="mx-auto max-w-4xl px-4 py-16 text-center">
         <AlertTriangle className="mx-auto h-12 w-12 text-amber-500" />
-        <h2 className="mt-4 text-lg font-semibold text-gray-900">Something went wrong</h2>
+        <h2 className="mt-4 text-lg font-semibold text-gray-900">משהו השתבש</h2>
         <p className="mt-2 text-sm text-gray-500">{error ?? 'Unknown error'}</p>
         <Link href="/basket" className="btn-primary mt-6 inline-flex">
-          Back to Basket
+          חזרה לסל
         </Link>
       </div>
     );
@@ -89,10 +89,10 @@ function OptimizePageInner() {
   if (result.items.length === 0) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-16 text-center">
-        <h2 className="text-lg font-semibold text-gray-900">Nothing to optimize</h2>
-        <p className="mt-2 text-sm text-gray-500">Your basket may be empty.</p>
+        <h2 className="text-lg font-semibold text-gray-900">אין מה למטב</h2>
+        <p className="mt-2 text-sm text-gray-500">ייתכן שהסל שלכם ריק.</p>
         <Link href="/basket" className="btn-primary mt-6 inline-flex">
-          Back to Basket
+          חזרה לסל
         </Link>
       </div>
     );
@@ -107,7 +107,7 @@ function OptimizePageInner() {
         className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to basket
+        חזרה לסל
       </Link>
 
       <div className="flex items-center gap-3">
@@ -115,9 +115,9 @@ function OptimizePageInner() {
           <Sparkles className="h-5 w-5 text-brand-600" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Basket Optimization</h1>
+          <h1 className="text-2xl font-bold text-gray-900">אופטימיזציית סל</h1>
           <p className="text-sm text-gray-500">
-            Best prices at <strong>{result.supermarketName}</strong>
+            המחירים הטובים ביותר ב-<strong>{result.supermarketName}</strong>
           </p>
         </div>
       </div>
@@ -129,10 +129,10 @@ function OptimizePageInner() {
             <TrendingDown className="h-6 w-6 text-green-600 shrink-0" />
             <div>
               <p className="font-semibold text-green-800">
-                Save {formatPrice(result.savings)} ({result.savingsPercentage}%)
+                חסכו {formatPrice(result.savings)} ({result.savingsPercentage}%)
               </p>
               <p className="text-sm text-green-700">
-                Original: {formatPrice(result.originalTotal)} → Optimized:{' '}
+                מקורי: {formatPrice(result.originalTotal)} ← ממוטב:{' '}
                 {formatPrice(result.optimizedTotal)}
               </p>
             </div>
@@ -143,7 +143,7 @@ function OptimizePageInner() {
           <div className="flex items-center gap-3">
             <CheckCircle className="h-6 w-6 text-gray-500 shrink-0" />
             <p className="text-sm text-gray-600">
-              Your basket is already optimized! Total: {formatPrice(result.originalTotal)}
+              הסל שלכם כבר ממוטב! סה״כ: {formatPrice(result.originalTotal)}
             </p>
           </div>
         </div>
@@ -151,7 +151,7 @@ function OptimizePageInner() {
 
       {/* Optimized items */}
       <div className="mt-6">
-        <h2 className="text-lg font-semibold text-gray-900">Items</h2>
+        <h2 className="text-lg font-semibold text-gray-900">פריטים</h2>
         <div className="mt-3 space-y-3">
           {result.items.map((item) => (
             <div
@@ -167,13 +167,13 @@ function OptimizePageInner() {
                     {item.changed && (
                       <span className="inline-flex items-center gap-0.5 rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700">
                         <RefreshCw className="h-3 w-3" />
-                        Switched
+                        הוחלף
                       </span>
                     )}
                   </div>
                   {item.changed && (
                     <p className="mt-1 text-xs text-gray-500">
-                      Was: {item.originalDisplayName}
+                      היה: {item.originalDisplayName}
                     </p>
                   )}
                   {item.changeReason && (
@@ -210,14 +210,14 @@ function OptimizePageInner() {
       {/* Total */}
       <div className="mt-6 card p-4 bg-gray-50">
         <div className="flex items-center justify-between">
-          <span className="font-semibold text-gray-700">Optimized Total</span>
+          <span className="font-semibold text-gray-700">סה״כ ממוטב</span>
           <div className="text-right">
             <span className="text-xl font-bold text-gray-900">
               {formatPrice(result.optimizedTotal)}
             </span>
             {result.savings > 0 && (
               <p className="text-xs text-green-600">
-                You save {formatPrice(result.savings)}
+                אתם חוסכים {formatPrice(result.savings)}
               </p>
             )}
           </div>
@@ -229,7 +229,7 @@ function OptimizePageInner() {
         <div className="mt-8">
           <div className="flex items-center gap-2">
             <Lightbulb className="h-5 w-5 text-amber-500" />
-            <h2 className="text-lg font-semibold text-gray-900">Recommendations</h2>
+            <h2 className="text-lg font-semibold text-gray-900">המלצות</h2>
           </div>
           <div className="mt-3 space-y-3">
             {result.recommendations.map((rec) => (
@@ -245,7 +245,7 @@ function OptimizePageInner() {
           href={`/compare?basketId=${basketId}`}
           className="btn-primary flex-1 gap-2 py-3 justify-center"
         >
-          View Full Comparison
+          צפו בהשוואה מלאה
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
@@ -261,10 +261,10 @@ function RecommendationCard({ recommendation }: { recommendation: Recommendation
     quantity: 'bg-purple-50 border-purple-200 text-purple-800',
   };
   const typeLabels: Record<string, string> = {
-    cheaper_alternative: 'Cheaper Alternative',
-    promo: 'Promotion',
-    constraint_relaxation: 'Relax Constraint',
-    quantity: 'Quantity Tip',
+    cheaper_alternative: 'חלופה זולה יותר',
+    promo: 'מבצע',
+    constraint_relaxation: 'הרחבת קריטריון',
+    quantity: 'טיפ לכמות',
   };
 
   const style = typeStyles[recommendation.type] ?? 'bg-gray-50 border-gray-200 text-gray-800';
@@ -283,7 +283,7 @@ function RecommendationCard({ recommendation }: { recommendation: Recommendation
         {recommendation.impact.savingsAmount > 0 && (
           <div className="ml-4 shrink-0 text-right">
             <p className="text-lg font-bold">-{formatPrice(recommendation.impact.savingsAmount)}</p>
-            <p className="text-xs opacity-70">{recommendation.impact.percentage}% off</p>
+            <p className="text-xs opacity-70">{recommendation.impact.percentage}% הנחה</p>
           </div>
         )}
       </div>

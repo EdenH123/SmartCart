@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'BasketWise - Compare Grocery Prices',
+  title: 'סל חכם - השוואת מחירי מצרכים',
   description: 'Build your basket, compare totals across supermarkets, and discover cheaper substitutions.',
 };
 
@@ -12,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="he" dir="rtl">
       <body className="font-sans">
         <div className="min-h-screen">
           <header className="border-b bg-white">
@@ -20,13 +20,13 @@ export default function RootLayout({
               <div className="flex h-14 items-center justify-between">
                 <a href="/" className="flex items-center gap-2">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600">
-                    <span className="text-sm font-bold text-white">B</span>
+                    <span className="text-sm font-bold text-white">ס</span>
                   </div>
-                  <span className="text-lg font-bold text-gray-900">BasketWise</span>
+                  <span className="text-lg font-bold text-gray-900">סל חכם</span>
                 </a>
                 <nav className="flex items-center gap-4">
                   <a href="/basket" className="text-sm font-medium text-gray-600 hover:text-gray-900">
-                    My Basket
+                    הסל שלי
                   </a>
                 </nav>
               </div>

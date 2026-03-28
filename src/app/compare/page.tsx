@@ -66,10 +66,10 @@ function ComparePageInner() {
     return (
       <div className="mx-auto max-w-4xl px-4 py-16 text-center">
         <AlertTriangle className="mx-auto h-12 w-12 text-amber-500" />
-        <h2 className="mt-4 text-lg font-semibold text-gray-900">Something went wrong</h2>
+        <h2 className="mt-4 text-lg font-semibold text-gray-900">משהו השתבש</h2>
         <p className="mt-2 text-sm text-gray-500">{error ?? 'Unknown error'}</p>
         <Link href="/basket" className="btn-primary mt-6 inline-flex">
-          Back to Basket
+          חזרה לסל
         </Link>
       </div>
     );
@@ -78,10 +78,10 @@ function ComparePageInner() {
   if (result.comparisons.length === 0) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-16 text-center">
-        <h2 className="text-lg font-semibold text-gray-900">No results</h2>
-        <p className="mt-2 text-sm text-gray-500">Your basket may be empty.</p>
+        <h2 className="text-lg font-semibold text-gray-900">אין תוצאות</h2>
+        <p className="mt-2 text-sm text-gray-500">ייתכן שהסל שלכם ריק.</p>
         <Link href="/basket" className="btn-primary mt-6 inline-flex">
-          Back to Basket
+          חזרה לסל
         </Link>
       </div>
     );
@@ -93,19 +93,18 @@ function ComparePageInner() {
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
       <Link href="/basket" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6">
         <ArrowLeft className="h-4 w-4" />
-        Back to basket
+        חזרה לסל
       </Link>
 
-      <h1 className="text-2xl font-bold text-gray-900">Price Comparison</h1>
+      <h1 className="text-2xl font-bold text-gray-900">השוואת מחירים</h1>
 
       {/* Info banner */}
       <div className="mt-4 rounded-lg bg-brand-50 p-4 text-sm text-brand-800">
-        <p className="font-medium">Ranked by availability first, then total price.</p>
+        <p className="font-medium">מדורג לפי זמינות ואז לפי מחיר כולל.</p>
         {savings > 0 && (
           <p className="mt-1 flex items-center gap-1">
             <TrendingDown className="h-4 w-4" />
-            You save <strong>{formatPrice(savings)}</strong> at{' '}
-            <strong>{result.comparisons[0].supermarketName}</strong> versus{' '}
+            אתם חוסכים <strong>{formatPrice(savings)}</strong> ב-<strong>{result.comparisons[0].supermarketName}</strong> לעומת{' '}
             <strong>{result.comparisons[result.comparisons.length - 1].supermarketName}</strong>
           </p>
         )}
@@ -114,7 +113,7 @@ function ComparePageInner() {
       {/* Freshness disclaimer */}
       <div className="mt-3 flex items-start gap-2 rounded-lg bg-gray-50 p-3 text-xs text-gray-500">
         <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-        <span>Prices are periodically updated and may not reflect real-time pricing.</span>
+        <span>המחירים מתעדכנים מעת לעת ועשויים לא לשקף מחירים בזמן אמת.</span>
       </div>
 
       {/* Supermarket cards */}
@@ -149,7 +148,7 @@ function SupermarketCard({
       {isBest && (
         <div className="bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white flex items-center gap-1.5">
           <Trophy className="h-3.5 w-3.5" />
-          Best Price
+          המחיר הטוב ביותר
         </div>
       )}
       <div className="p-5">
@@ -164,7 +163,7 @@ function SupermarketCard({
                 {comparison.lastIngestionAt && (
                   <p className="flex items-center gap-1 text-xs text-gray-400">
                     <Clock className="h-3 w-3" />
-                    Updated {formatTimeAgo(comparison.lastIngestionAt)}
+                    עודכן לפני {formatTimeAgo(comparison.lastIngestionAt)}
                   </p>
                 )}
               </div>
@@ -181,18 +180,18 @@ function SupermarketCard({
           {comparison.unavailableCount > 0 && (
             <span className="badge-unavailable">
               <AlertTriangle className="mr-1 h-3 w-3" />
-              {comparison.unavailableCount} unavailable
+              {comparison.unavailableCount} לא זמין
             </span>
           )}
           {comparison.substitutionCount > 0 && (
             <span className="badge-substituted">
               <RefreshCw className="mr-1 h-3 w-3" />
-              {comparison.substitutionCount} substitution{comparison.substitutionCount !== 1 ? 's' : ''}
+              {comparison.substitutionCount} תחליפים
             </span>
           )}
           {comparison.itemResults.some((r) => r.isPromo) && (
             <span className="badge-promo">
-              Includes promos
+              כולל מבצעים
             </span>
           )}
         </div>
@@ -207,13 +206,13 @@ function SupermarketCard({
                     {item.productName ?? item.requestedDisplayName}
                   </span>
                   {item.wasSubstituted && (
-                    <span className="badge-substituted text-[10px]">sub</span>
+                    <span className="badge-substituted text-[10px]">תחליף</span>
                   )}
                   {item.isPromo && (
-                    <span className="badge-promo text-[10px]">promo</span>
+                    <span className="badge-promo text-[10px]">מבצע</span>
                   )}
                   {item.resolutionType === 'unavailable' && (
-                    <span className="badge-unavailable text-[10px]">N/A</span>
+                    <span className="badge-unavailable text-[10px]">חסר</span>
                   )}
                 </div>
                 <span className="text-gray-900 font-medium ml-2 whitespace-nowrap">
@@ -225,7 +224,7 @@ function SupermarketCard({
             ))}
             {comparison.itemResults.length > 3 && (
               <p className="text-xs text-gray-400">
-                + {comparison.itemResults.length - 3} more items
+                עוד +{comparison.itemResults.length - 3} פריטים
               </p>
             )}
           </div>
@@ -235,7 +234,7 @@ function SupermarketCard({
           href={`/compare/${comparison.supermarketSlug}?basketId=${basketId}`}
           className="mt-4 flex items-center justify-center gap-1 rounded-lg bg-gray-50 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
         >
-          View Full Breakdown
+          צפו בפירוט מלא
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>

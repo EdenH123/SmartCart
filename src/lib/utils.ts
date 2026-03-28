@@ -6,11 +6,11 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatPrice(price: number): string {
-  return `$${price.toFixed(2)}`;
+  return `₪${price.toFixed(2)}`;
 }
 
 export function formatTimeAgo(dateStr: string | null): string {
-  if (!dateStr) return 'Never';
+  if (!dateStr) return 'מעולם לא';
   const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -19,10 +19,10 @@ export function formatTimeAgo(dateStr: string | null): string {
   const diffHr = Math.floor(diffMin / 60);
   const diffDay = Math.floor(diffHr / 24);
 
-  if (diffSec < 60) return 'Just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  if (diffHr < 24) return `${diffHr}h ago`;
-  return `${diffDay}d ago`;
+  if (diffSec < 60) return 'הרגע';
+  if (diffMin < 60) return `לפני ${diffMin}ד׳`;
+  if (diffHr < 24) return `לפני ${diffHr}ש׳`;
+  return `לפני ${diffDay}י׳`;
 }
 
 export function buildDisplayName(

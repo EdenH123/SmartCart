@@ -109,20 +109,20 @@ function BasketPageInner() {
     <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Basket</h1>
+          <h1 className="text-2xl font-bold text-gray-900">הסל שלי</h1>
           <p className="mt-1 text-sm text-gray-500">
-            {items.length === 0 ? 'Your basket is empty' : `${items.length} item${items.length !== 1 ? 's' : ''}`}
+            {items.length === 0 ? 'הסל שלכם ריק' : `${items.length} פריטים`}
           </p>
         </div>
         <div className="flex gap-2">
           {items.length > 0 && (
             <button onClick={handleClear} className="btn-ghost text-red-600 hover:bg-red-50 text-xs">
-              Clear all
+              נקה הכל
             </button>
           )}
           <button onClick={() => setShowAddModal(true)} className="btn-primary gap-1.5">
             <Plus className="h-4 w-4" />
-            Add Product
+            הוסף מוצר
           </button>
         </div>
       </div>
@@ -133,14 +133,14 @@ function BasketPageInner() {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
             <ShoppingCart className="h-8 w-8 text-gray-400" />
           </div>
-          <h3 className="mt-4 text-sm font-semibold text-gray-900">No items yet</h3>
+          <h3 className="mt-4 text-sm font-semibold text-gray-900">אין פריטים עדיין</h3>
           <p className="mt-1 text-sm text-gray-500">
-            Add products to your basket to compare prices across supermarkets.
+            הוסיפו מוצרים לסל כדי להשוות מחירים בין סופרמרקטים.
           </p>
           <div className="mt-6 flex justify-center gap-3">
             <button onClick={() => setShowAddModal(true)} className="btn-primary gap-1.5">
               <Plus className="h-4 w-4" />
-              Add Product
+              הוסף מוצר
             </button>
             <button
               onClick={async () => {
@@ -150,7 +150,7 @@ function BasketPageInner() {
               }}
               className="btn-secondary"
             >
-              Load Demo Basket
+              טענו סל לדוגמה
             </button>
           </div>
         </div>
@@ -166,7 +166,7 @@ function BasketPageInner() {
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-gray-900 truncate">{item.displayName}</p>
                     <span className={item.matchMode === 'exact' ? 'badge-exact' : 'badge-flexible'}>
-                      {item.matchMode}
+                      {item.matchMode === 'exact' ? 'מדויק' : 'גמיש'}
                     </span>
                   </div>
                   <p className="mt-0.5 text-xs text-gray-500">{item.categoryName}</p>
@@ -213,12 +213,12 @@ function BasketPageInner() {
           <div className="mt-8 space-y-3">
             <button onClick={handleCompare} className="btn-primary w-full gap-2 py-3 text-base">
               <Scale className="h-5 w-5" />
-              Compare Prices
+              השוו מחירים
               <ArrowRight className="h-4 w-4" />
             </button>
             <button onClick={handleOptimize} className="w-full inline-flex items-center justify-center gap-2 rounded-lg border-2 border-brand-200 bg-brand-50 py-3 text-base font-semibold text-brand-700 hover:bg-brand-100 transition-colors">
               <Sparkles className="h-5 w-5" />
-              Optimize My Basket
+              מטבו את הסל שלי
             </button>
           </div>
         </>

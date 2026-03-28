@@ -131,9 +131,9 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between border-b px-6 py-4">
           <h2 className="text-lg font-semibold text-gray-900">
-            {step === 'search' && 'Add Product'}
+            {step === 'search' && 'הוסף מוצר'}
             {step === 'configure' && selectedCategory?.name}
-            {step === 'preview' && 'Review & Add'}
+            {step === 'preview' && 'סקירה והוספה'}
           </h2>
           <button onClick={onClose} className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
             <X className="h-5 w-5" />
@@ -148,7 +148,7 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
               <input
                 type="text"
                 autoFocus
-                placeholder="Search for a product (e.g., milk, eggs, bread...)"
+                placeholder="חפשו מוצר (למשל: חלב, ביצים, לחם...)"
                 className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -157,7 +157,7 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
 
             <div className="mt-4 max-h-64 overflow-y-auto">
               {categories.length === 0 && searchQuery.length > 0 && (
-                <p className="py-8 text-center text-sm text-gray-500">No categories found</p>
+                <p className="py-8 text-center text-sm text-gray-500">לא נמצאו קטגוריות</p>
               )}
               {categories.map((cat) => (
                 <button
@@ -178,7 +178,7 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
 
             {searchQuery.length === 0 && (
               <p className="py-8 text-center text-sm text-gray-500">
-                Start typing to search product categories
+                התחילו להקליד כדי לחפש קטגוריות
               </p>
             )}
           </div>
@@ -191,19 +191,19 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
               onClick={() => setStep('search')}
               className="mb-4 text-sm text-brand-600 hover:text-brand-700"
             >
-              &larr; Back to search
+              &rarr; חזרה לחיפוש
             </button>
 
             <div className="space-y-4">
               {selectedCategory.attributes.map((attr) => (
                 <div key={attr.key}>
-                  <label className="block text-sm font-medium text-gray-700">{attr.label}</label>
+                  <label className="block text-sm font-medium text-gray-700 text-right">{attr.label}</label>
                   <select
                     className="mt-1 w-full rounded-lg border border-gray-300 py-2 px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                     value={String(constraints[attr.key] ?? 'any')}
                     onChange={(e) => handleConstraintChange(attr.key, e.target.value)}
                   >
-                    <option value="any">Any</option>
+                    <option value="any">הכל</option>
                     {attr.possibleValues.map((v) => (
                       <option key={v} value={v}>{v}</option>
                     ))}
@@ -214,7 +214,7 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
               {/* Brand selection from matching products */}
               {matchingProducts.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Brand</label>
+                  <label className="block text-sm font-medium text-gray-700 text-right">מותג</label>
                   <select
                     className="mt-1 w-full rounded-lg border border-gray-300 py-2 px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                     value={selectedProduct?.id ?? 'any'}
@@ -227,10 +227,10 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
                       }
                     }}
                   >
-                    <option value="any">Any brand</option>
+                    <option value="any">כל מותג</option>
                     {matchingProducts.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.brand ?? 'Unbranded'} — {p.name}
+                        {p.brand ?? 'ללא מותג'} — {p.name}
                       </option>
                     ))}
                   </select>
@@ -239,7 +239,7 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
 
               {/* Quantity */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">Quantity</label>
+                <label className="block text-sm font-medium text-gray-700 text-right">כמות</label>
                 <div className="mt-1 flex items-center gap-3">
                   <button
                     className="btn-secondary px-3 py-1"
@@ -259,7 +259,7 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
 
               {/* Match Mode */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">Match Mode</label>
+                <label className="block text-sm font-medium text-gray-700 text-right">מצב התאמה</label>
                 <div className="mt-2 flex gap-3">
                   <button
                     className={`flex-1 rounded-lg border-2 p-3 text-left text-sm transition-colors ${
@@ -269,9 +269,9 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
                     }`}
                     onClick={() => setMatchMode('flexible')}
                   >
-                    <p className="font-medium">Flexible</p>
+                    <p className="font-medium">גמיש</p>
                     <p className="mt-0.5 text-xs text-gray-500">
-                      Allow cheaper alternatives
+                      אפשרו חלופות זולות יותר
                     </p>
                   </button>
                   <button
@@ -282,20 +282,20 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
                     }`}
                     onClick={() => setMatchMode('exact')}
                   >
-                    <p className="font-medium">Exact</p>
+                    <p className="font-medium">מדויק</p>
                     <p className="mt-0.5 text-xs text-gray-500">
-                      Only this specific product
+                      רק המוצר הספציפי הזה
                     </p>
                   </button>
                 </div>
               </div>
 
               {loading && (
-                <p className="text-xs text-gray-400">Finding matching products...</p>
+                <p className="text-xs text-gray-400">מחפש מוצרים מתאימים...</p>
               )}
               {!loading && matchingProducts.length > 0 && (
                 <p className="text-xs text-gray-500">
-                  {matchingProducts.length} matching product{matchingProducts.length !== 1 ? 's' : ''} found
+                  נמצאו {matchingProducts.length} מוצרים מתאימים
                 </p>
               )}
             </div>
@@ -305,7 +305,7 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
                 onClick={handleGoToPreview}
                 className="btn-primary w-full gap-2"
               >
-                Review
+                סקירה
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
@@ -319,7 +319,7 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
               onClick={() => setStep('configure')}
               className="mb-4 text-sm text-brand-600 hover:text-brand-700"
             >
-              &larr; Back to options
+              &rarr; חזרה לאפשרויות
             </button>
 
             <div className="card p-4">
@@ -339,17 +339,17 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
                 {Object.entries(constraints).map(([key, value]) => {
                   if (value === 'any' || !value) return null;
                   return (
-                    <span key={key} className="rounded-md bg-gray-100 px-2 py-1">
+                    <span key={key} className="rounded-md bg-gray-100 px-2 py-1" dir="ltr">
                       {key}: {String(value)}
                     </span>
                   );
                 })}
-                <span className="rounded-md bg-gray-100 px-2 py-1">qty: {quantity}</span>
+                <span className="rounded-md bg-gray-100 px-2 py-1">כמות: {quantity}</span>
               </div>
 
               {selectedProduct && (
                 <p className="mt-2 text-xs text-gray-500">
-                  Brand: {selectedProduct.brand ?? 'Any'}
+                  מותג: {selectedProduct.brand ?? 'הכל'}
                 </p>
               )}
             </div>
@@ -359,7 +359,7 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
               className="btn-primary mt-6 w-full gap-2"
             >
               <ShoppingCart className="h-4 w-4" />
-              Add to Basket
+              הוסף לסל
             </button>
           </div>
         )}

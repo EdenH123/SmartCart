@@ -59,9 +59,9 @@ function BreakdownPageInner() {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 text-center">
         <AlertTriangle className="mx-auto h-12 w-12 text-amber-500" />
-        <h2 className="mt-4 text-lg font-semibold">Supermarket not found</h2>
+        <h2 className="mt-4 text-lg font-semibold">סופרמרקט לא נמצא</h2>
         <Link href={`/compare?basketId=${basketId}`} className="btn-primary mt-6 inline-flex">
-          Back to comparison
+          חזרה להשוואה
         </Link>
       </div>
     );
@@ -74,18 +74,18 @@ function BreakdownPageInner() {
         className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to comparison
+        חזרה להשוואה
       </Link>
 
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{comparison.supermarketName}</h1>
           <div className="mt-1 flex items-center gap-3">
-            <p className="text-sm text-gray-500">Full basket breakdown</p>
+            <p className="text-sm text-gray-500">פירוט מלא של הסל</p>
             {comparison.lastIngestionAt && (
               <span className="flex items-center gap-1 text-xs text-gray-400">
                 <Clock className="h-3 w-3" />
-                Prices updated {formatTimeAgo(comparison.lastIngestionAt)}
+                מחירים עודכנו לפני {formatTimeAgo(comparison.lastIngestionAt)}
               </span>
             )}
           </div>
@@ -94,10 +94,10 @@ function BreakdownPageInner() {
           <p className="text-3xl font-bold text-gray-900">{formatPrice(comparison.total)}</p>
           <div className="mt-1 flex gap-2 justify-end">
             {comparison.unavailableCount > 0 && (
-              <span className="badge-unavailable text-xs">{comparison.unavailableCount} unavailable</span>
+              <span className="badge-unavailable text-xs">{comparison.unavailableCount} לא זמין</span>
             )}
             {comparison.substitutionCount > 0 && (
-              <span className="badge-substituted text-xs">{comparison.substitutionCount} substituted</span>
+              <span className="badge-substituted text-xs">{comparison.substitutionCount} הוחלף</span>
             )}
           </div>
         </div>
@@ -112,7 +112,7 @@ function BreakdownPageInner() {
       {/* Total */}
       <div className="mt-6 card p-4">
         <div className="flex items-center justify-between">
-          <span className="text-lg font-semibold text-gray-900">Total</span>
+          <span className="text-lg font-semibold text-gray-900">סה״כ</span>
           <span className="text-2xl font-bold text-gray-900">{formatPrice(comparison.total)}</span>
         </div>
       </div>
@@ -152,7 +152,7 @@ function ItemRow({ item }: { item: ItemResolution }) {
           {item.wasSubstituted && (
             <div className="mt-2 ml-8 rounded-lg bg-purple-50 p-2.5 text-xs">
               <p className="text-purple-700">
-                <span className="font-medium">Requested:</span> {item.requestedDisplayName}
+                <span className="font-medium">המבוקש:</span> {item.requestedDisplayName}
               </p>
               {item.substitutionReason && (
                 <p className="mt-1 text-purple-600">{item.substitutionReason}</p>
@@ -172,7 +172,7 @@ function ItemRow({ item }: { item: ItemResolution }) {
             {item.wasSubstituted && (
               <span className="badge-substituted text-[10px]">
                 <RefreshCw className="mr-0.5 h-2.5 w-2.5" />
-                Substituted
+                הוחלף
               </span>
             )}
             {item.isPromo && item.promoDescription && (
@@ -182,7 +182,7 @@ function ItemRow({ item }: { item: ItemResolution }) {
               </span>
             )}
             {isUnavailable && (
-              <span className="badge-unavailable text-[10px]">Unavailable</span>
+              <span className="badge-unavailable text-[10px]">לא זמין</span>
             )}
             {item.priceTimestamp && !isUnavailable && (
               <span className="flex items-center gap-0.5 text-[10px] text-gray-400">

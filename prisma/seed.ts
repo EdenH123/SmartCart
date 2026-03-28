@@ -16,83 +16,83 @@ async function main() {
 
   // ── Categories ──
   const milk = await prisma.productCategory.create({
-    data: { name: 'Milk', slug: 'milk' },
+    data: { name: 'חלב', slug: 'milk' },
   });
   const eggs = await prisma.productCategory.create({
-    data: { name: 'Eggs', slug: 'eggs' },
+    data: { name: 'ביצים', slug: 'eggs' },
   });
   const cottage = await prisma.productCategory.create({
-    data: { name: 'Cottage Cheese', slug: 'cottage-cheese' },
+    data: { name: 'גבינת קוטג׳', slug: 'cottage-cheese' },
   });
   const yogurt = await prisma.productCategory.create({
-    data: { name: 'Yogurt', slug: 'yogurt' },
+    data: { name: 'יוגורט', slug: 'yogurt' },
   });
   const bread = await prisma.productCategory.create({
-    data: { name: 'Bread', slug: 'bread' },
+    data: { name: 'לחם', slug: 'bread' },
   });
   const rice = await prisma.productCategory.create({
-    data: { name: 'Rice', slug: 'rice' },
+    data: { name: 'אורז', slug: 'rice' },
   });
   const pasta = await prisma.productCategory.create({
-    data: { name: 'Pasta', slug: 'pasta' },
+    data: { name: 'פסטה', slug: 'pasta' },
   });
   const tomatoes = await prisma.productCategory.create({
-    data: { name: 'Tomatoes', slug: 'tomatoes' },
+    data: { name: 'עגבניות', slug: 'tomatoes' },
   });
   const cucumbers = await prisma.productCategory.create({
-    data: { name: 'Cucumbers', slug: 'cucumbers' },
+    data: { name: 'מלפפונים', slug: 'cucumbers' },
   });
   const chicken = await prisma.productCategory.create({
-    data: { name: 'Chicken Breast', slug: 'chicken-breast' },
+    data: { name: 'חזה עוף', slug: 'chicken-breast' },
   });
   const tuna = await prisma.productCategory.create({
-    data: { name: 'Tuna', slug: 'tuna' },
+    data: { name: 'טונה', slug: 'tuna' },
   });
   const cereal = await prisma.productCategory.create({
-    data: { name: 'Cereal', slug: 'cereal' },
+    data: { name: 'דגני בוקר', slug: 'cereal' },
   });
 
   // ── Attribute Definitions ──
   const attrDefs = [
-    // Milk
-    { categoryId: milk.id, key: 'type', label: 'Type', type: 'enum', possibleValues: JSON.stringify(['Regular', 'Lactose Free', 'Organic']), sortOrder: 1 },
-    { categoryId: milk.id, key: 'fat', label: 'Fat %', type: 'enum', possibleValues: JSON.stringify(['1%', '2%', '3%', 'Skim']), sortOrder: 2 },
-    { categoryId: milk.id, key: 'volume', label: 'Volume', type: 'enum', possibleValues: JSON.stringify(['1L', '2L', '0.5L']), sortOrder: 3 },
-    // Eggs
-    { categoryId: eggs.id, key: 'size', label: 'Size', type: 'enum', possibleValues: JSON.stringify(['M', 'L', 'XL']), sortOrder: 1 },
-    { categoryId: eggs.id, key: 'packCount', label: 'Pack Count', type: 'enum', possibleValues: JSON.stringify(['6', '12']), sortOrder: 2 },
-    { categoryId: eggs.id, key: 'type', label: 'Type', type: 'enum', possibleValues: JSON.stringify(['Regular', 'Free Range', 'Organic']), sortOrder: 3 },
-    // Cottage Cheese
-    { categoryId: cottage.id, key: 'fat', label: 'Fat %', type: 'enum', possibleValues: JSON.stringify(['0%', '3%', '5%', '9%']), sortOrder: 1 },
-    { categoryId: cottage.id, key: 'weight', label: 'Weight', type: 'enum', possibleValues: JSON.stringify(['200g', '250g', '500g']), sortOrder: 2 },
-    // Yogurt
-    { categoryId: yogurt.id, key: 'type', label: 'Type', type: 'enum', possibleValues: JSON.stringify(['Plain', 'Greek', 'Fruit']), sortOrder: 1 },
-    { categoryId: yogurt.id, key: 'fat', label: 'Fat %', type: 'enum', possibleValues: JSON.stringify(['0%', '2%', '5%']), sortOrder: 2 },
-    { categoryId: yogurt.id, key: 'weight', label: 'Weight', type: 'enum', possibleValues: JSON.stringify(['150g', '200g', '500g']), sortOrder: 3 },
-    // Bread
-    { categoryId: bread.id, key: 'type', label: 'Type', type: 'enum', possibleValues: JSON.stringify(['White', 'Whole Wheat', 'Rye', 'Multigrain']), sortOrder: 1 },
-    { categoryId: bread.id, key: 'weight', label: 'Weight', type: 'enum', possibleValues: JSON.stringify(['500g', '750g', '1kg']), sortOrder: 2 },
-    // Rice
-    { categoryId: rice.id, key: 'type', label: 'Type', type: 'enum', possibleValues: JSON.stringify(['White', 'Brown', 'Basmati', 'Jasmine']), sortOrder: 1 },
-    { categoryId: rice.id, key: 'weight', label: 'Weight', type: 'enum', possibleValues: JSON.stringify(['500g', '1kg', '2kg']), sortOrder: 2 },
-    // Pasta
-    { categoryId: pasta.id, key: 'type', label: 'Type', type: 'enum', possibleValues: JSON.stringify(['Spaghetti', 'Penne', 'Fusilli', 'Macaroni']), sortOrder: 1 },
-    { categoryId: pasta.id, key: 'weight', label: 'Weight', type: 'enum', possibleValues: JSON.stringify(['500g', '1kg']), sortOrder: 2 },
-    // Tomatoes
-    { categoryId: tomatoes.id, key: 'type', label: 'Type', type: 'enum', possibleValues: JSON.stringify(['Regular', 'Cherry', 'Roma']), sortOrder: 1 },
-    { categoryId: tomatoes.id, key: 'weight', label: 'Weight', type: 'enum', possibleValues: JSON.stringify(['500g', '1kg']), sortOrder: 2 },
-    // Cucumbers
-    { categoryId: cucumbers.id, key: 'type', label: 'Type', type: 'enum', possibleValues: JSON.stringify(['Regular', 'Persian', 'English']), sortOrder: 1 },
-    { categoryId: cucumbers.id, key: 'quantity', label: 'Quantity', type: 'enum', possibleValues: JSON.stringify(['Single', 'Pack of 3', 'Pack of 5']), sortOrder: 2 },
-    // Chicken
-    { categoryId: chicken.id, key: 'type', label: 'Type', type: 'enum', possibleValues: JSON.stringify(['Regular', 'Organic', 'Free Range']), sortOrder: 1 },
-    { categoryId: chicken.id, key: 'weight', label: 'Weight', type: 'enum', possibleValues: JSON.stringify(['500g', '1kg']), sortOrder: 2 },
-    // Tuna
-    { categoryId: tuna.id, key: 'type', label: 'Type', type: 'enum', possibleValues: JSON.stringify(['In Water', 'In Oil', 'In Brine']), sortOrder: 1 },
-    { categoryId: tuna.id, key: 'weight', label: 'Weight', type: 'enum', possibleValues: JSON.stringify(['120g', '185g', '400g']), sortOrder: 2 },
-    // Cereal
-    { categoryId: cereal.id, key: 'type', label: 'Type', type: 'enum', possibleValues: JSON.stringify(['Corn Flakes', 'Granola', 'Muesli', 'Oatmeal']), sortOrder: 1 },
-    { categoryId: cereal.id, key: 'weight', label: 'Weight', type: 'enum', possibleValues: JSON.stringify(['375g', '500g', '750g']), sortOrder: 2 },
+    // חלב
+    { categoryId: milk.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['רגיל', 'ללא לקטוז', 'אורגני']), sortOrder: 1 },
+    { categoryId: milk.id, key: 'fat', label: 'אחוז שומן', type: 'enum', possibleValues: JSON.stringify(['1%', '2%', '3%', 'דל שומן']), sortOrder: 2 },
+    { categoryId: milk.id, key: 'volume', label: 'נפח', type: 'enum', possibleValues: JSON.stringify(['1 ליטר', '2 ליטר', '0.5 ליטר']), sortOrder: 3 },
+    // ביצים
+    { categoryId: eggs.id, key: 'size', label: 'גודל', type: 'enum', possibleValues: JSON.stringify(['M', 'L', 'XL']), sortOrder: 1 },
+    { categoryId: eggs.id, key: 'packCount', label: 'כמות באריזה', type: 'enum', possibleValues: JSON.stringify(['6', '12']), sortOrder: 2 },
+    { categoryId: eggs.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['רגיל', 'חופש', 'אורגני']), sortOrder: 3 },
+    // גבינת קוטג׳
+    { categoryId: cottage.id, key: 'fat', label: 'אחוז שומן', type: 'enum', possibleValues: JSON.stringify(['0%', '3%', '5%', '9%']), sortOrder: 1 },
+    { categoryId: cottage.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['200 גרם', '250 גרם', '500 גרם']), sortOrder: 2 },
+    // יוגורט
+    { categoryId: yogurt.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['טבעי', 'יווני', 'פירות']), sortOrder: 1 },
+    { categoryId: yogurt.id, key: 'fat', label: 'אחוז שומן', type: 'enum', possibleValues: JSON.stringify(['0%', '2%', '5%']), sortOrder: 2 },
+    { categoryId: yogurt.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['150 גרם', '200 גרם', '500 גרם']), sortOrder: 3 },
+    // לחם
+    { categoryId: bread.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['לבן', 'מלא', 'שיפון', 'רב דגנים']), sortOrder: 1 },
+    { categoryId: bread.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['500 גרם', '750 גרם', '1 ק״ג']), sortOrder: 2 },
+    // אורז
+    { categoryId: rice.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['לבן', 'חום', 'בסמטי', 'יסמין']), sortOrder: 1 },
+    { categoryId: rice.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['500 גרם', '1 ק״ג', '2 ק״ג']), sortOrder: 2 },
+    // פסטה
+    { categoryId: pasta.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['ספגטי', 'פנה', 'פוזילי', 'מקרוני']), sortOrder: 1 },
+    { categoryId: pasta.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['500 גרם', '1 ק״ג']), sortOrder: 2 },
+    // עגבניות
+    { categoryId: tomatoes.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['רגיל', 'שרי', 'רומא']), sortOrder: 1 },
+    { categoryId: tomatoes.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['500 גרם', '1 ק״ג']), sortOrder: 2 },
+    // מלפפונים
+    { categoryId: cucumbers.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['רגיל', 'פרסי', 'אנגלי']), sortOrder: 1 },
+    { categoryId: cucumbers.id, key: 'quantity', label: 'כמות', type: 'enum', possibleValues: JSON.stringify(['יחידה', 'שלישייה', 'חמישייה']), sortOrder: 2 },
+    // חזה עוף
+    { categoryId: chicken.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['רגיל', 'אורגני', 'חופש']), sortOrder: 1 },
+    { categoryId: chicken.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['500 גרם', '1 ק״ג']), sortOrder: 2 },
+    // טונה
+    { categoryId: tuna.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['במים', 'בשמן', 'בציר מלח']), sortOrder: 1 },
+    { categoryId: tuna.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['120 גרם', '185 גרם', '400 גרם']), sortOrder: 2 },
+    // דגני בוקר
+    { categoryId: cereal.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['קורנפלקס', 'גרנולה', 'מוזלי', 'שיבולת שועל']), sortOrder: 1 },
+    { categoryId: cereal.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['375 גרם', '500 גרם', '750 גרם']), sortOrder: 2 },
   ];
 
   for (const attr of attrDefs) {
@@ -101,18 +101,18 @@ async function main() {
 
   // ── Supermarkets ──
   const now = new Date();
-  const freshmart = await prisma.supermarket.create({
-    data: { name: 'FreshMart', slug: 'freshmart', lastIngestionAt: now },
+  const shufersal = await prisma.supermarket.create({
+    data: { name: 'שופרסל', slug: 'shufersal', lastIngestionAt: now },
   });
-  const valueGrocer = await prisma.supermarket.create({
-    data: { name: 'ValueGrocer', slug: 'valuegrocer', lastIngestionAt: now },
+  const yochananof = await prisma.supermarket.create({
+    data: { name: 'יוחננוף', slug: 'yochananof', lastIngestionAt: now },
   });
-  const greenBasket = await prisma.supermarket.create({
-    data: { name: 'GreenBasket', slug: 'greenbasket', lastIngestionAt: now },
+  const ramiLevy = await prisma.supermarket.create({
+    data: { name: 'רמי לוי', slug: 'rami-levy', lastIngestionAt: now },
   });
 
   // ── Data Sources ──
-  for (const sm of [freshmart, valueGrocer, greenBasket]) {
+  for (const sm of [shufersal, yochananof, ramiLevy]) {
     await prisma.dataSource.create({
       data: {
         supermarketId: sm.id,
@@ -123,7 +123,6 @@ async function main() {
   }
 
   // ── Canonical Products & Supermarket Products ──
-  // Helper to create canonical + supermarket listings
   async function seedProduct(
     categoryId: string,
     name: string,
@@ -167,7 +166,6 @@ async function main() {
         },
       });
 
-      // Create initial price snapshot
       await prisma.priceSnapshot.create({
         data: {
           supermarketProductId: sp.id,
@@ -182,182 +180,182 @@ async function main() {
     return canonical;
   }
 
-  // ── MILK ──
-  await seedProduct(milk.id, 'Regular Milk 3% 1L', 'DairyBest', { type: 'Regular', fat: '3%', volume: '1L' }, [
-    { supermarketId: freshmart.id, externalName: 'DairyBest Full Milk 3% 1L', price: 1.89 },
-    { supermarketId: valueGrocer.id, externalName: 'DairyBest Milk 3% 1 Liter', price: 1.79 },
-    { supermarketId: greenBasket.id, externalName: 'DairyBest 3% Milk 1L', price: 1.99 },
+  // ── חלב ──
+  await seedProduct(milk.id, 'חלב 3% רגיל 1 ליטר', 'תנובה', { type: 'רגיל', fat: '3%', volume: '1 ליטר' }, [
+    { supermarketId: shufersal.id, externalName: 'תנובה חלב 3% 1 ליטר', price: 6.90 },
+    { supermarketId: yochananof.id, externalName: 'חלב תנובה 3% 1 ליטר', price: 6.50 },
+    { supermarketId: ramiLevy.id, externalName: 'תנובה חלב מלא 3% 1 ליטר', price: 7.20 },
   ]);
-  await seedProduct(milk.id, 'Regular Milk 3% 1L', 'Farm Fresh', { type: 'Regular', fat: '3%', volume: '1L' }, [
-    { supermarketId: freshmart.id, externalName: 'Farm Fresh Whole Milk 3% 1L', price: 1.69, isPromo: true, promoDescription: 'Weekly special - save $0.30' },
-    { supermarketId: valueGrocer.id, externalName: 'Farm Fresh 3% Milk 1L', price: 1.85 },
-    { supermarketId: greenBasket.id, externalName: 'Farm Fresh Milk 3% 1L', price: 1.95 },
+  await seedProduct(milk.id, 'חלב 3% רגיל 1 ליטר', 'טרה', { type: 'רגיל', fat: '3%', volume: '1 ליטר' }, [
+    { supermarketId: shufersal.id, externalName: 'טרה חלב 3% 1 ליטר', price: 6.50, isPromo: true, promoDescription: 'מבצע השבוע - חסכו 1.50₪' },
+    { supermarketId: yochananof.id, externalName: 'חלב טרה 3% 1 ליטר', price: 6.90 },
+    { supermarketId: ramiLevy.id, externalName: 'טרה חלב 3% 1 ליטר', price: 7.10 },
   ]);
-  await seedProduct(milk.id, 'Skim Milk 1L', 'DairyBest', { type: 'Regular', fat: 'Skim', volume: '1L' }, [
-    { supermarketId: freshmart.id, externalName: 'DairyBest Skim Milk 1L', price: 1.59 },
-    { supermarketId: valueGrocer.id, externalName: 'DairyBest Skim 1L', price: 1.55 },
+  await seedProduct(milk.id, 'חלב דל שומן 1 ליטר', 'תנובה', { type: 'רגיל', fat: 'דל שומן', volume: '1 ליטר' }, [
+    { supermarketId: shufersal.id, externalName: 'תנובה חלב דל שומן 1 ליטר', price: 6.20 },
+    { supermarketId: yochananof.id, externalName: 'חלב תנובה דל שומן 1 ליטר', price: 5.90 },
   ]);
-  await seedProduct(milk.id, 'Organic Milk 3% 1L', 'GreenFields', { type: 'Organic', fat: '3%', volume: '1L' }, [
-    { supermarketId: freshmart.id, externalName: 'GreenFields Organic 3% Milk 1L', price: 3.29 },
-    { supermarketId: greenBasket.id, externalName: 'GreenFields Organic Milk 3% 1L', price: 2.99 },
+  await seedProduct(milk.id, 'חלב אורגני 3% 1 ליטר', 'תנובה', { type: 'אורגני', fat: '3%', volume: '1 ליטר' }, [
+    { supermarketId: shufersal.id, externalName: 'תנובה חלב אורגני 3% 1 ליטר', price: 11.90 },
+    { supermarketId: ramiLevy.id, externalName: 'תנובה אורגני חלב 3% 1 ליטר', price: 10.90 },
   ]);
-  await seedProduct(milk.id, 'Lactose Free Milk 2% 1L', 'DairyBest', { type: 'Lactose Free', fat: '2%', volume: '1L' }, [
-    { supermarketId: freshmart.id, externalName: 'DairyBest Lactose Free 2% 1L', price: 2.49 },
-    { supermarketId: valueGrocer.id, externalName: 'DairyBest LF Milk 2% 1L', price: 2.39 },
-    { supermarketId: greenBasket.id, externalName: 'DairyBest Lactose Free 2% 1L', price: 2.59 },
+  await seedProduct(milk.id, 'חלב ללא לקטוז 2% 1 ליטר', 'שטראוס', { type: 'ללא לקטוז', fat: '2%', volume: '1 ליטר' }, [
+    { supermarketId: shufersal.id, externalName: 'שטראוס חלב ללא לקטוז 2% 1 ליטר', price: 8.90 },
+    { supermarketId: yochananof.id, externalName: 'שטראוס ללא לקטוז 2% 1 ליטר', price: 8.50 },
+    { supermarketId: ramiLevy.id, externalName: 'שטראוס חלב ל.ל 2% 1 ליטר', price: 9.20 },
   ]);
-  await seedProduct(milk.id, 'Regular Milk 1% 2L', 'Farm Fresh', { type: 'Regular', fat: '1%', volume: '2L' }, [
-    { supermarketId: freshmart.id, externalName: 'Farm Fresh Low Fat 1% 2L', price: 2.99 },
-    { supermarketId: valueGrocer.id, externalName: 'Farm Fresh 1% Milk 2L', price: 2.89 },
-    { supermarketId: greenBasket.id, externalName: 'Farm Fresh Light Milk 1% 2L', price: 3.15 },
-  ]);
-
-  // ── EGGS ──
-  await seedProduct(eggs.id, 'Large Eggs 12-pack', 'HappyHen', { size: 'L', packCount: '12', type: 'Regular' }, [
-    { supermarketId: freshmart.id, externalName: 'HappyHen Large Eggs x12', price: 3.99 },
-    { supermarketId: valueGrocer.id, externalName: 'HappyHen Eggs Large 12pk', price: 3.49, isPromo: true, promoDescription: 'Buy 2 get 10% off' },
-    { supermarketId: greenBasket.id, externalName: 'HappyHen Large 12 Eggs', price: 4.29 },
-  ]);
-  await seedProduct(eggs.id, 'Free Range Eggs L 12-pack', 'NatureFarm', { size: 'L', packCount: '12', type: 'Free Range' }, [
-    { supermarketId: freshmart.id, externalName: 'NatureFarm Free Range L x12', price: 5.49 },
-    { supermarketId: greenBasket.id, externalName: 'NatureFarm Free Range Large 12pk', price: 5.29 },
-  ]);
-  await seedProduct(eggs.id, 'Medium Eggs 6-pack', 'HappyHen', { size: 'M', packCount: '6', type: 'Regular' }, [
-    { supermarketId: freshmart.id, externalName: 'HappyHen Medium Eggs x6', price: 1.99 },
-    { supermarketId: valueGrocer.id, externalName: 'HappyHen Eggs M 6pk', price: 1.89 },
-    { supermarketId: greenBasket.id, externalName: 'HappyHen Medium 6 Eggs', price: 2.09 },
+  await seedProduct(milk.id, 'חלב 1% רגיל 2 ליטר', 'טרה', { type: 'רגיל', fat: '1%', volume: '2 ליטר' }, [
+    { supermarketId: shufersal.id, externalName: 'טרה חלב 1% 2 ליטר', price: 11.90 },
+    { supermarketId: yochananof.id, externalName: 'חלב טרה 1% 2 ליטר', price: 11.50 },
+    { supermarketId: ramiLevy.id, externalName: 'טרה חלב דל 1% 2 ליטר', price: 12.50 },
   ]);
 
-  // ── COTTAGE CHEESE ──
-  await seedProduct(cottage.id, 'Cottage Cheese 5% 250g', 'CreamyDale', { fat: '5%', weight: '250g' }, [
-    { supermarketId: freshmart.id, externalName: 'CreamyDale Cottage 5% 250g', price: 2.29 },
-    { supermarketId: valueGrocer.id, externalName: 'CreamyDale Cottage Cheese 5% 250g', price: 2.19 },
-    { supermarketId: greenBasket.id, externalName: 'CreamyDale 5% Cottage 250g', price: 2.39 },
+  // ── ביצים ──
+  await seedProduct(eggs.id, 'ביצים L תריסר', 'משק שמיר', { size: 'L', packCount: '12', type: 'רגיל' }, [
+    { supermarketId: shufersal.id, externalName: 'משק שמיר ביצים L 12 יח׳', price: 25.90 },
+    { supermarketId: yochananof.id, externalName: 'ביצים משק שמיר L 12', price: 23.90, isPromo: true, promoDescription: 'קנו 2 קבלו 10% הנחה' },
+    { supermarketId: ramiLevy.id, externalName: 'משק שמיר ביצים גדולות 12 יח׳', price: 27.90 },
   ]);
-  await seedProduct(cottage.id, 'Cottage Cheese 0% 250g', 'FitDairy', { fat: '0%', weight: '250g' }, [
-    { supermarketId: freshmart.id, externalName: 'FitDairy Fat Free Cottage 250g', price: 2.49 },
-    { supermarketId: valueGrocer.id, externalName: 'FitDairy 0% Cottage 250g', price: 2.29 },
+  await seedProduct(eggs.id, 'ביצים חופש L תריסר', 'ביצת הנגב', { size: 'L', packCount: '12', type: 'חופש' }, [
+    { supermarketId: shufersal.id, externalName: 'ביצת הנגב ביצי חופש L 12', price: 32.90 },
+    { supermarketId: ramiLevy.id, externalName: 'ביצת הנגב חופש L 12 יח׳', price: 30.90 },
   ]);
-  await seedProduct(cottage.id, 'Cottage Cheese 9% 500g', 'CreamyDale', { fat: '9%', weight: '500g' }, [
-    { supermarketId: freshmart.id, externalName: 'CreamyDale Rich Cottage 9% 500g', price: 3.99 },
-    { supermarketId: greenBasket.id, externalName: 'CreamyDale Cottage 9% 500g', price: 4.19 },
-  ]);
-
-  // ── YOGURT ──
-  await seedProduct(yogurt.id, 'Greek Yogurt 0% 200g', 'GreekGold', { type: 'Greek', fat: '0%', weight: '200g' }, [
-    { supermarketId: freshmart.id, externalName: 'GreekGold Greek Yogurt 0% 200g', price: 1.79 },
-    { supermarketId: valueGrocer.id, externalName: 'GreekGold 0% Greek 200g', price: 1.69 },
-    { supermarketId: greenBasket.id, externalName: 'GreekGold Fat-Free Greek 200g', price: 1.89 },
-  ]);
-  await seedProduct(yogurt.id, 'Fruit Yogurt 2% 150g', 'YumYogurt', { type: 'Fruit', fat: '2%', weight: '150g' }, [
-    { supermarketId: freshmart.id, externalName: 'YumYogurt Strawberry 2% 150g', price: 0.99 },
-    { supermarketId: valueGrocer.id, externalName: 'YumYogurt Fruit Mix 2% 150g', price: 0.89, isPromo: true, promoDescription: '3 for $2.50' },
-    { supermarketId: greenBasket.id, externalName: 'YumYogurt Berry 2% 150g', price: 1.09 },
+  await seedProduct(eggs.id, 'ביצים M שישייה', 'משק שמיר', { size: 'M', packCount: '6', type: 'רגיל' }, [
+    { supermarketId: shufersal.id, externalName: 'משק שמיר ביצים M 6 יח׳', price: 13.90 },
+    { supermarketId: yochananof.id, externalName: 'ביצים משק שמיר M 6', price: 12.90 },
+    { supermarketId: ramiLevy.id, externalName: 'משק שמיר ביצים בינוניות 6 יח׳', price: 14.50 },
   ]);
 
-  // ── BREAD ──
-  await seedProduct(bread.id, 'White Bread 750g', 'BakersBest', { type: 'White', weight: '750g' }, [
-    { supermarketId: freshmart.id, externalName: 'BakersBest White Loaf 750g', price: 2.49 },
-    { supermarketId: valueGrocer.id, externalName: 'BakersBest White Bread 750g', price: 2.29 },
-    { supermarketId: greenBasket.id, externalName: 'BakersBest Classic White 750g', price: 2.69 },
+  // ── גבינת קוטג׳ ──
+  await seedProduct(cottage.id, 'קוטג׳ 5% 250 גרם', 'תנובה', { fat: '5%', weight: '250 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'תנובה קוטג׳ 5% 250 גרם', price: 7.90 },
+    { supermarketId: yochananof.id, externalName: 'קוטג׳ תנובה 5% 250 גרם', price: 7.50 },
+    { supermarketId: ramiLevy.id, externalName: 'תנובה קוטג׳ 5% 250 גרם', price: 8.20 },
   ]);
-  await seedProduct(bread.id, 'Whole Wheat Bread 750g', 'BakersBest', { type: 'Whole Wheat', weight: '750g' }, [
-    { supermarketId: freshmart.id, externalName: 'BakersBest Whole Wheat 750g', price: 2.99 },
-    { supermarketId: valueGrocer.id, externalName: 'BakersBest WW Bread 750g', price: 2.79 },
-    { supermarketId: greenBasket.id, externalName: 'BakersBest Wholemeal 750g', price: 3.19 },
+  await seedProduct(cottage.id, 'קוטג׳ 0% 250 גרם', 'שטראוס', { fat: '0%', weight: '250 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'שטראוס קוטג׳ 0% 250 גרם', price: 8.50 },
+    { supermarketId: yochananof.id, externalName: 'קוטג׳ שטראוס דל שומן 250 גרם', price: 7.90 },
   ]);
-  await seedProduct(bread.id, 'Multigrain Bread 500g', 'HealthyLoaf', { type: 'Multigrain', weight: '500g' }, [
-    { supermarketId: freshmart.id, externalName: 'HealthyLoaf Multigrain 500g', price: 3.49 },
-    { supermarketId: greenBasket.id, externalName: 'HealthyLoaf Multi-Seed 500g', price: 3.29 },
-  ]);
-
-  // ── RICE ──
-  await seedProduct(rice.id, 'Basmati Rice 1kg', 'RoyalGrain', { type: 'Basmati', weight: '1kg' }, [
-    { supermarketId: freshmart.id, externalName: 'RoyalGrain Basmati 1kg', price: 3.99 },
-    { supermarketId: valueGrocer.id, externalName: 'RoyalGrain Basmati Rice 1kg', price: 3.79 },
-    { supermarketId: greenBasket.id, externalName: 'RoyalGrain Premium Basmati 1kg', price: 4.29 },
-  ]);
-  await seedProduct(rice.id, 'White Rice 2kg', 'EasyRice', { type: 'White', weight: '2kg' }, [
-    { supermarketId: freshmart.id, externalName: 'EasyRice Long Grain White 2kg', price: 3.49 },
-    { supermarketId: valueGrocer.id, externalName: 'EasyRice White 2kg', price: 3.29 },
-    { supermarketId: greenBasket.id, externalName: 'EasyRice White Rice 2kg', price: 3.69 },
+  await seedProduct(cottage.id, 'קוטג׳ 9% 500 גרם', 'תנובה', { fat: '9%', weight: '500 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'תנובה קוטג׳ 9% 500 גרם', price: 14.90 },
+    { supermarketId: ramiLevy.id, externalName: 'תנובה קוטג׳ שמן 9% 500 גרם', price: 15.50 },
   ]);
 
-  // ── PASTA ──
-  await seedProduct(pasta.id, 'Spaghetti 500g', 'PastaVita', { type: 'Spaghetti', weight: '500g' }, [
-    { supermarketId: freshmart.id, externalName: 'PastaVita Spaghetti 500g', price: 1.49 },
-    { supermarketId: valueGrocer.id, externalName: 'PastaVita Spaghetti 500g', price: 1.29 },
-    { supermarketId: greenBasket.id, externalName: 'PastaVita Classic Spaghetti 500g', price: 1.59 },
+  // ── יוגורט ──
+  await seedProduct(yogurt.id, 'יוגורט יווני 0% 200 גרם', 'דנונה', { type: 'יווני', fat: '0%', weight: '200 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'דנונה יוגורט יווני 0% 200 גרם', price: 6.90 },
+    { supermarketId: yochananof.id, externalName: 'יוגורט דנונה יווני 0% 200 גרם', price: 6.50 },
+    { supermarketId: ramiLevy.id, externalName: 'דנונה יווני 0% 200 גרם', price: 7.20 },
   ]);
-  await seedProduct(pasta.id, 'Penne 500g', 'PastaVita', { type: 'Penne', weight: '500g' }, [
-    { supermarketId: freshmart.id, externalName: 'PastaVita Penne 500g', price: 1.49 },
-    { supermarketId: valueGrocer.id, externalName: 'PastaVita Penne Rigate 500g', price: 1.39 },
-    { supermarketId: greenBasket.id, externalName: 'PastaVita Penne 500g', price: 1.55 },
-  ]);
-
-  // ── TOMATOES ──
-  await seedProduct(tomatoes.id, 'Cherry Tomatoes 500g', null, { type: 'Cherry', weight: '500g' }, [
-    { supermarketId: freshmart.id, externalName: 'Fresh Cherry Tomatoes 500g', price: 2.99 },
-    { supermarketId: valueGrocer.id, externalName: 'Cherry Tomatoes Pack 500g', price: 2.79 },
-    { supermarketId: greenBasket.id, externalName: 'Organic Cherry Tomatoes 500g', price: 3.49 },
-  ]);
-  await seedProduct(tomatoes.id, 'Regular Tomatoes 1kg', null, { type: 'Regular', weight: '1kg' }, [
-    { supermarketId: freshmart.id, externalName: 'Vine Tomatoes 1kg', price: 3.29 },
-    { supermarketId: valueGrocer.id, externalName: 'Fresh Tomatoes 1kg', price: 2.99 },
-    { supermarketId: greenBasket.id, externalName: 'Premium Tomatoes 1kg', price: 3.59 },
+  await seedProduct(yogurt.id, 'יוגורט פירות 2% 150 גרם', 'תנובה', { type: 'פירות', fat: '2%', weight: '150 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'תנובה יוגורט פירות 2% 150 גרם', price: 4.90 },
+    { supermarketId: yochananof.id, externalName: 'יוגורט תנובה פירות 2% 150 גרם', price: 4.50, isPromo: true, promoDescription: '3 ב-12₪' },
+    { supermarketId: ramiLevy.id, externalName: 'תנובה יוגורט פירות יער 2% 150 גרם', price: 5.20 },
   ]);
 
-  // ── CUCUMBERS ──
-  await seedProduct(cucumbers.id, 'English Cucumber Single', null, { type: 'English', quantity: 'Single' }, [
-    { supermarketId: freshmart.id, externalName: 'English Cucumber', price: 1.29 },
-    { supermarketId: valueGrocer.id, externalName: 'Long English Cucumber', price: 1.19 },
-    { supermarketId: greenBasket.id, externalName: 'English Cucumber', price: 1.39 },
+  // ── לחם ──
+  await seedProduct(bread.id, 'לחם לבן 750 גרם', 'אנג׳ל', { type: 'לבן', weight: '750 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'אנג׳ל לחם לבן 750 גרם', price: 9.90 },
+    { supermarketId: yochananof.id, externalName: 'לחם אנג׳ל לבן 750 גרם', price: 8.90 },
+    { supermarketId: ramiLevy.id, externalName: 'אנג׳ל לחם לבן קלאסי 750 גרם', price: 10.50 },
   ]);
-  await seedProduct(cucumbers.id, 'Persian Cucumbers Pack of 5', null, { type: 'Persian', quantity: 'Pack of 5' }, [
-    { supermarketId: freshmart.id, externalName: 'Persian Mini Cucumbers x5', price: 2.49 },
-    { supermarketId: greenBasket.id, externalName: 'Persian Cucumbers 5pk', price: 2.69 },
+  await seedProduct(bread.id, 'לחם מלא 750 גרם', 'אנג׳ל', { type: 'מלא', weight: '750 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'אנג׳ל לחם מלא 750 גרם', price: 11.90 },
+    { supermarketId: yochananof.id, externalName: 'לחם אנג׳ל מלא 750 גרם', price: 10.90 },
+    { supermarketId: ramiLevy.id, externalName: 'אנג׳ל לחם חיטה מלאה 750 גרם', price: 12.50 },
   ]);
-
-  // ── CHICKEN BREAST ──
-  await seedProduct(chicken.id, 'Chicken Breast 1kg', 'FarmPride', { type: 'Regular', weight: '1kg' }, [
-    { supermarketId: freshmart.id, externalName: 'FarmPride Chicken Breast 1kg', price: 8.99 },
-    { supermarketId: valueGrocer.id, externalName: 'FarmPride Chicken Breast 1kg', price: 7.99, isPromo: true, promoDescription: 'Meat week special!' },
-    { supermarketId: greenBasket.id, externalName: 'FarmPride Fresh Chicken Breast 1kg', price: 9.49 },
-  ]);
-  await seedProduct(chicken.id, 'Organic Chicken Breast 500g', 'NatureFarm', { type: 'Organic', weight: '500g' }, [
-    { supermarketId: freshmart.id, externalName: 'NatureFarm Organic Chicken 500g', price: 7.99 },
-    { supermarketId: greenBasket.id, externalName: 'NatureFarm Organic Breast 500g', price: 7.49 },
+  await seedProduct(bread.id, 'לחם רב דגנים 500 גרם', 'ברמן', { type: 'רב דגנים', weight: '500 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'ברמן לחם רב דגנים 500 גרם', price: 13.90 },
+    { supermarketId: ramiLevy.id, externalName: 'ברמן רב דגנים 500 גרם', price: 12.90 },
   ]);
 
-  // ── TUNA ──
-  await seedProduct(tuna.id, 'Tuna in Water 185g', 'OceanCatch', { type: 'In Water', weight: '185g' }, [
-    { supermarketId: freshmart.id, externalName: 'OceanCatch Tuna in Water 185g', price: 2.29 },
-    { supermarketId: valueGrocer.id, externalName: 'OceanCatch Light Tuna Water 185g', price: 1.99 },
-    { supermarketId: greenBasket.id, externalName: 'OceanCatch Tuna Chunks Water 185g', price: 2.49 },
+  // ── אורז ──
+  await seedProduct(rice.id, 'אורז בסמטי 1 ק״ג', 'סוגת', { type: 'בסמטי', weight: '1 ק״ג' }, [
+    { supermarketId: shufersal.id, externalName: 'סוגת אורז בסמטי 1 ק״ג', price: 15.90 },
+    { supermarketId: yochananof.id, externalName: 'אורז סוגת בסמטי 1 ק״ג', price: 14.90 },
+    { supermarketId: ramiLevy.id, externalName: 'סוגת בסמטי פרימיום 1 ק״ג', price: 16.90 },
   ]);
-  await seedProduct(tuna.id, 'Tuna in Oil 185g', 'OceanCatch', { type: 'In Oil', weight: '185g' }, [
-    { supermarketId: freshmart.id, externalName: 'OceanCatch Tuna in Oil 185g', price: 2.49 },
-    { supermarketId: valueGrocer.id, externalName: 'OceanCatch Tuna Oil 185g', price: 2.19 },
-    { supermarketId: greenBasket.id, externalName: 'OceanCatch Premium Tuna Oil 185g', price: 2.69 },
-  ]);
-
-  // ── CEREAL ──
-  await seedProduct(cereal.id, 'Corn Flakes 500g', 'MorningCrunch', { type: 'Corn Flakes', weight: '500g' }, [
-    { supermarketId: freshmart.id, externalName: 'MorningCrunch Corn Flakes 500g', price: 3.49 },
-    { supermarketId: valueGrocer.id, externalName: 'MorningCrunch Classic Corn Flakes 500g', price: 3.29 },
-    { supermarketId: greenBasket.id, externalName: 'MorningCrunch Corn Flakes 500g', price: 3.69 },
-  ]);
-  await seedProduct(cereal.id, 'Granola 750g', 'NutriMix', { type: 'Granola', weight: '750g' }, [
-    { supermarketId: freshmart.id, externalName: 'NutriMix Crunchy Granola 750g', price: 5.99 },
-    { supermarketId: valueGrocer.id, externalName: 'NutriMix Granola Mix 750g', price: 5.49 },
-    { supermarketId: greenBasket.id, externalName: 'NutriMix Premium Granola 750g', price: 6.29, isPromo: true, promoDescription: 'New product - 10% off' },
-  ]);
-  await seedProduct(cereal.id, 'Oatmeal 500g', 'MorningCrunch', { type: 'Oatmeal', weight: '500g' }, [
-    { supermarketId: freshmart.id, externalName: 'MorningCrunch Instant Oats 500g', price: 2.99 },
-    { supermarketId: valueGrocer.id, externalName: 'MorningCrunch Oatmeal 500g', price: 2.79 },
+  await seedProduct(rice.id, 'אורז לבן 2 ק״ג', 'סוגת', { type: 'לבן', weight: '2 ק״ג' }, [
+    { supermarketId: shufersal.id, externalName: 'סוגת אורז לבן 2 ק״ג', price: 13.90 },
+    { supermarketId: yochananof.id, externalName: 'אורז סוגת לבן 2 ק״ג', price: 12.90 },
+    { supermarketId: ramiLevy.id, externalName: 'סוגת אורז לבן ארוך 2 ק״ג', price: 14.50 },
   ]);
 
-  // Create a demo basket with some items
+  // ── פסטה ──
+  await seedProduct(pasta.id, 'ספגטי 500 גרם', 'אוסם', { type: 'ספגטי', weight: '500 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'אוסם ספגטי 500 גרם', price: 5.90 },
+    { supermarketId: yochananof.id, externalName: 'ספגטי אוסם 500 גרם', price: 5.50 },
+    { supermarketId: ramiLevy.id, externalName: 'אוסם ספגטי קלאסי 500 גרם', price: 6.20 },
+  ]);
+  await seedProduct(pasta.id, 'פנה 500 גרם', 'ברילה', { type: 'פנה', weight: '500 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'ברילה פנה 500 גרם', price: 8.90 },
+    { supermarketId: yochananof.id, externalName: 'פנה ברילה 500 גרם', price: 7.90 },
+    { supermarketId: ramiLevy.id, externalName: 'ברילה פנה ריגאטה 500 גרם', price: 9.50 },
+  ]);
+
+  // ── עגבניות ──
+  await seedProduct(tomatoes.id, 'עגבניות שרי 500 גרם', null, { type: 'שרי', weight: '500 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'עגבניות שרי טריות 500 גרם', price: 7.90 },
+    { supermarketId: yochananof.id, externalName: 'שרי 500 גרם', price: 6.90 },
+    { supermarketId: ramiLevy.id, externalName: 'עגבניות שרי אורגני 500 גרם', price: 9.90 },
+  ]);
+  await seedProduct(tomatoes.id, 'עגבניות רגיל 1 ק״ג', null, { type: 'רגיל', weight: '1 ק״ג' }, [
+    { supermarketId: shufersal.id, externalName: 'עגבניות 1 ק״ג', price: 8.90 },
+    { supermarketId: yochananof.id, externalName: 'עגבניות טריות 1 ק״ג', price: 7.90 },
+    { supermarketId: ramiLevy.id, externalName: 'עגבניות אשכולות 1 ק״ג', price: 9.90 },
+  ]);
+
+  // ── מלפפונים ──
+  await seedProduct(cucumbers.id, 'מלפפון אנגלי יחידה', null, { type: 'אנגלי', quantity: 'יחידה' }, [
+    { supermarketId: shufersal.id, externalName: 'מלפפון אנגלי', price: 4.90 },
+    { supermarketId: yochananof.id, externalName: 'מלפפון אנגלי ארוך', price: 4.50 },
+    { supermarketId: ramiLevy.id, externalName: 'מלפפון אנגלי טרי', price: 5.20 },
+  ]);
+  await seedProduct(cucumbers.id, 'מלפפונים פרסיים חמישייה', null, { type: 'פרסי', quantity: 'חמישייה' }, [
+    { supermarketId: shufersal.id, externalName: 'מלפפונים פרסיים 5 יח׳', price: 8.90 },
+    { supermarketId: ramiLevy.id, externalName: 'מלפפון פרסי 5 יח׳', price: 9.50 },
+  ]);
+
+  // ── חזה עוף ──
+  await seedProduct(chicken.id, 'חזה עוף רגיל 1 ק״ג', 'עוף טוב', { type: 'רגיל', weight: '1 ק״ג' }, [
+    { supermarketId: shufersal.id, externalName: 'עוף טוב חזה עוף 1 ק״ג', price: 34.90 },
+    { supermarketId: yochananof.id, externalName: 'חזה עוף עוף טוב 1 ק״ג', price: 31.90, isPromo: true, promoDescription: 'מבצע בשר השבוע!' },
+    { supermarketId: ramiLevy.id, externalName: 'עוף טוב חזה טרי 1 ק״ג', price: 36.90 },
+  ]);
+  await seedProduct(chicken.id, 'חזה עוף אורגני 500 גרם', 'עוף העמק', { type: 'אורגני', weight: '500 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'עוף העמק חזה אורגני 500 גרם', price: 29.90 },
+    { supermarketId: ramiLevy.id, externalName: 'עוף העמק אורגני חזה 500 גרם', price: 27.90 },
+  ]);
+
+  // ── טונה ──
+  await seedProduct(tuna.id, 'טונה במים 185 גרם', 'סטארקיסט', { type: 'במים', weight: '185 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'סטארקיסט טונה במים 185 גרם', price: 9.90 },
+    { supermarketId: yochananof.id, externalName: 'טונה סטארקיסט במים 185 גרם', price: 8.90 },
+    { supermarketId: ramiLevy.id, externalName: 'סטארקיסט טונה לייט במים 185 גרם', price: 10.50 },
+  ]);
+  await seedProduct(tuna.id, 'טונה בשמן 185 גרם', 'גלי', { type: 'בשמן', weight: '185 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'גלי טונה בשמן 185 גרם', price: 10.90 },
+    { supermarketId: yochananof.id, externalName: 'טונה גלי בשמן 185 גרם', price: 9.90 },
+    { supermarketId: ramiLevy.id, externalName: 'גלי טונה פרימיום בשמן 185 גרם', price: 11.50 },
+  ]);
+
+  // ── דגני בוקר ──
+  await seedProduct(cereal.id, 'קורנפלקס 500 גרם', 'תלמה', { type: 'קורנפלקס', weight: '500 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'תלמה קורנפלקס 500 גרם', price: 16.90 },
+    { supermarketId: yochananof.id, externalName: 'קורנפלקס תלמה 500 גרם', price: 15.90 },
+    { supermarketId: ramiLevy.id, externalName: 'תלמה קורנפלקס קלאסי 500 גרם', price: 17.90 },
+  ]);
+  await seedProduct(cereal.id, 'גרנולה 750 גרם', 'תלמה', { type: 'גרנולה', weight: '750 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'תלמה גרנולה 750 גרם', price: 24.90 },
+    { supermarketId: yochananof.id, externalName: 'גרנולה תלמה 750 גרם', price: 22.90 },
+    { supermarketId: ramiLevy.id, externalName: 'תלמה גרנולה פרימיום 750 גרם', price: 26.90, isPromo: true, promoDescription: 'מוצר חדש - 10% הנחה' },
+  ]);
+  await seedProduct(cereal.id, 'שיבולת שועל 500 גרם', 'אוסם', { type: 'שיבולת שועל', weight: '500 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'אוסם שיבולת שועל 500 גרם', price: 12.90 },
+    { supermarketId: yochananof.id, externalName: 'שיבולת שועל אוסם 500 גרם', price: 11.90 },
+  ]);
+
+  // ── Demo Basket ──
   const demoBasket = await prisma.basket.create({
     data: {
       items: {
@@ -366,48 +364,48 @@ async function main() {
             categoryId: milk.id,
             quantity: 2,
             matchMode: 'flexible',
-            displayName: 'Milk Regular 3% 1L',
-            userConstraints: JSON.stringify({ type: 'Regular', fat: '3%', volume: '1L' }),
+            displayName: 'חלב רגיל 3% 1 ליטר',
+            userConstraints: JSON.stringify({ type: 'רגיל', fat: '3%', volume: '1 ליטר' }),
           },
           {
             categoryId: eggs.id,
             quantity: 1,
             matchMode: 'flexible',
-            displayName: 'Eggs Large 12-pack',
+            displayName: 'ביצים L תריסר',
             userConstraints: JSON.stringify({ size: 'L', packCount: '12' }),
           },
           {
             categoryId: bread.id,
             quantity: 1,
             matchMode: 'flexible',
-            displayName: 'Bread Whole Wheat 750g',
-            userConstraints: JSON.stringify({ type: 'Whole Wheat', weight: '750g' }),
+            displayName: 'לחם מלא 750 גרם',
+            userConstraints: JSON.stringify({ type: 'מלא', weight: '750 גרם' }),
           },
           {
             categoryId: chicken.id,
             quantity: 1,
             matchMode: 'flexible',
-            displayName: 'Chicken Breast Regular 1kg',
-            userConstraints: JSON.stringify({ type: 'Regular', weight: '1kg' }),
+            displayName: 'חזה עוף רגיל 1 ק״ג',
+            userConstraints: JSON.stringify({ type: 'רגיל', weight: '1 ק״ג' }),
           },
           {
             categoryId: pasta.id,
             quantity: 2,
             matchMode: 'exact',
-            displayName: 'Pasta Spaghetti 500g',
-            userConstraints: JSON.stringify({ type: 'Spaghetti', weight: '500g' }),
+            displayName: 'ספגטי אוסם 500 גרם',
+            userConstraints: JSON.stringify({ type: 'ספגטי', weight: '500 גרם' }),
           },
         ],
       },
     },
   });
 
-  console.log(`✓ Seeded database successfully`);
-  console.log(`  - 12 product categories`);
-  console.log(`  - 30 canonical products`);
-  console.log(`  - 3 supermarkets with mock data sources`);
-  console.log(`  - ~80 supermarket listings with initial price snapshots`);
-  console.log(`  - 1 demo basket (id: ${demoBasket.id})`);
+  console.log(`✓ בסיס הנתונים נוצר בהצלחה`);
+  console.log(`  - 12 קטגוריות מוצרים`);
+  console.log(`  - 30 מוצרים קנוניים`);
+  console.log(`  - 3 סופרמרקטים ישראליים עם מקורות נתונים`);
+  console.log(`  - ~80 מוצרים בסופרמרקטים עם תמונות מחיר`);
+  console.log(`  - 1 סל לדוגמה (id: ${demoBasket.id})`);
 }
 
 main()

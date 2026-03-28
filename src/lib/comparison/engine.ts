@@ -45,7 +45,7 @@ export interface SupermarketInfo {
   lastIngestionAt: string | null;
 }
 
-const CURRENCY = 'USD';
+const CURRENCY = 'ILS';
 
 /**
  * Resolve a single basket item for a specific supermarket.
