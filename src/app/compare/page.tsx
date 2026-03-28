@@ -3,9 +3,9 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Trophy, AlertTriangle, ArrowRight, RefreshCw, TrendingDown, ArrowLeft } from 'lucide-react';
+import { Trophy, AlertTriangle, ArrowRight, RefreshCw, TrendingDown, ArrowLeft, Clock, Info } from 'lucide-react';
 import { compareBasketAction } from '@/lib/actions';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, formatTimeAgo } from '@/lib/utils';
 import type { ComparisonResult, SupermarketComparison } from '@/types';
 
 export default function ComparePage() {
@@ -111,6 +111,12 @@ function ComparePageInner() {
         )}
       </div>
 
+      {/* Freshness disclaimer */}
+      <div className="mt-3 flex items-start gap-2 rounded-lg bg-gray-50 p-3 text-xs text-gray-500">
+        <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+        <span>Prices are periodically updated and may not reflect real-time pricing.</span>
+      </div>
+
       {/* Supermarket cards */}
       <div className="mt-6 space-y-4">
         {result.comparisons.map((comp, index) => (
@@ -153,7 +159,15 @@ function SupermarketCard({
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-sm font-bold text-gray-700">
                 {rank}
               </span>
-              <h3 className="text-lg font-semibold text-gray-900">{comparison.supermarketName}</h3>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">{comparison.supermarketName}</h3>
+                {comparison.lastIngestionAt && (
+                  <p className="flex items-center gap-1 text-xs text-gray-400">
+                    <Clock className="h-3 w-3" />
+                    Updated {formatTimeAgo(comparison.lastIngestionAt)}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
           <div className="text-right">
@@ -204,8 +218,8 @@ function SupermarketCard({
                 </div>
                 <span className="text-gray-900 font-medium ml-2 whitespace-nowrap">
                   {item.totalPrice != null
-                    ? `${formatPrice(item.totalPrice)}${item.quantity > 1 ? ` (×${item.quantity})` : ''}`
-                    : '—'}
+                    ? `${formatPrice(item.totalPrice)}${item.quantity > 1 ? ` (x${item.quantity})` : ''}`
+                    : '\u2014'}
                 </span>
               </div>
             ))}

@@ -47,45 +47,78 @@ model CanonicalProduct {
   searchableText String
   isActive       Boolean @default(true)
 
-  category           ProductCategory    @relation(fields: [categoryId], references: [id])
+  category            ProductCategory      @relation(fields: [categoryId], references: [id])
   supermarketProducts SupermarketProduct[]
-  basketItems        BasketItem[]
+  basketItems         BasketItem[]
 
   createdAt DateTime @default(now())
 }
 
 model Supermarket {
-  id       String  @id @default(cuid())
-  name     String
-  slug     String  @unique
-  logoUrl  String?
-  isActive Boolean @default(true)
+  id              String    @id @default(cuid())
+  name            String
+  slug            String    @unique
+  logoUrl         String?
+  isActive        Boolean   @default(true)
+  lastIngestionAt DateTime?
 
-  products SupermarketProduct[]
+  products    SupermarketProduct[]
+  dataSources DataSource[]
 
   createdAt DateTime @default(now())
 }
 
 model SupermarketProduct {
-  id                 String   @id @default(cuid())
+  id                 String  @id @default(cuid())
   supermarketId      String
   canonicalProductId String
   externalName       String
   brand              String?
   unit               String?
   size               String?
-  price              Float
-  inStock            Boolean  @default(true)
-  isPromo            Boolean  @default(false)
+  price              Float // cached latest price for fast reads
+  inStock            Boolean @default(true)
+  isPromo            Boolean @default(false)
   promoDescription   String?
-  metadata           String   @default("{}") // JSON
+  metadata           String  @default("{}") // JSON
   updatedAt          DateTime @default(now())
 
   supermarket      Supermarket      @relation(fields: [supermarketId], references: [id])
   canonicalProduct CanonicalProduct @relation(fields: [canonicalProductId], references: [id])
+  priceSnapshots   PriceSnapshot[]
 
   @@index([supermarketId])
   @@index([canonicalProductId])
+}
+
+model PriceSnapshot {
+  id                   String   @id @default(cuid())
+  supermarketProductId String
+  price                Float
+  currency             String   @default("USD")
+  isPromo              Boolean  @default(false)
+  promoDescription     String?
+  inStock              Boolean  @default(true)
+  capturedAt           DateTime @default(now())
+
+  supermarketProduct SupermarketProduct @relation(fields: [supermarketProductId], references: [id], onDelete: Cascade)
+
+  @@index([supermarketProductId, capturedAt])
+}
+
+model DataSource {
+  id            String  @id @default(cuid())
+  supermarketId String
+  type          String  // mock, scraper, api
+  config        String  @default("{}") // JSON
+  isActive      Boolean @default(true)
+
+  supermarket Supermarket @relation(fields: [supermarketId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([supermarketId])
 }
 
 model Basket {

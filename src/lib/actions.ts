@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/db/client';
 import { searchCategories, searchProducts, getAllCategories, getCategory } from '@/lib/products/search';
 import { compareBasket } from '@/lib/comparison/engine';
+import { createLogger } from '@/lib/logger';
 import type {
   BasketItemDTO,
   BasketItemInput,
@@ -13,6 +14,8 @@ import type {
   SupermarketDTO,
   UserConstraints,
 } from '@/types';
+
+const log = createLogger('actions');
 
 // ── Category Actions ──
 
@@ -40,7 +43,6 @@ export async function searchProductsAction(
 // ── Basket Actions ──
 
 export async function getOrCreateBasket(): Promise<string> {
-  // For MVP, use the most recent basket or create new
   const existing = await prisma.basket.findFirst({
     orderBy: { updatedAt: 'desc' },
   });
@@ -117,7 +119,6 @@ export async function clearBasket(basketId: string): Promise<void> {
 // ── Load Demo Basket ──
 
 export async function loadDemoBasket(): Promise<string> {
-  // Find the demo basket (seeded one)
   const demoBasket = await prisma.basket.findFirst({
     where: {
       items: { some: {} },
@@ -127,7 +128,6 @@ export async function loadDemoBasket(): Promise<string> {
 
   if (demoBasket) return demoBasket.id;
 
-  // If no demo basket, create a new one with demo items
   const categories = await prisma.productCategory.findMany();
   const catMap = new Map(categories.map((c) => [c.slug, c.id]));
 
@@ -167,6 +167,8 @@ export async function loadDemoBasket(): Promise<string> {
 // ── Comparison ──
 
 export async function compareBasketAction(basketId: string): Promise<ComparisonResult> {
+  const startTime = Date.now();
+
   const basketItems = await prisma.basketItem.findMany({
     where: { basketId },
     include: { category: true },
@@ -186,10 +188,14 @@ export async function compareBasketAction(basketId: string): Promise<ComparisonR
     where: { isActive: true },
   });
 
-  // Fetch all supermarket products with their canonical products
+  // Fetch all supermarket products with canonical products and latest price snapshot
   const allProducts = await prisma.supermarketProduct.findMany({
     include: {
       canonicalProduct: true,
+      priceSnapshots: {
+        orderBy: { capturedAt: 'desc' },
+        take: 1,
+      },
     },
   });
 
@@ -216,6 +222,7 @@ export async function compareBasketAction(basketId: string): Promise<ComparisonR
     id: s.id,
     name: s.name,
     slug: s.slug,
+    lastIngestionAt: s.lastIngestionAt?.toISOString() ?? null,
   }));
 
   const productsMap = new Map<string, Array<{
@@ -229,6 +236,7 @@ export async function compareBasketAction(basketId: string): Promise<ComparisonR
     isPromo: boolean;
     promoDescription: string | null;
     metadata: Record<string, unknown>;
+    priceTimestamp: string | null;
     canonicalProduct: {
       id: string;
       categoryId: string;
@@ -241,30 +249,49 @@ export async function compareBasketAction(basketId: string): Promise<ComparisonR
   for (const [smId, products] of productsBySupermarket) {
     productsMap.set(
       smId,
-      products.map((p) => ({
-        id: p.id,
-        supermarketId: p.supermarketId,
-        canonicalProductId: p.canonicalProductId,
-        externalName: p.externalName,
-        brand: p.brand,
-        price: p.price,
-        inStock: p.inStock,
-        isPromo: p.isPromo,
-        promoDescription: p.promoDescription,
-        metadata: JSON.parse(p.metadata) as Record<string, unknown>,
-        canonicalProduct: {
-          id: p.canonicalProduct.id,
-          categoryId: p.canonicalProduct.categoryId,
-          name: p.canonicalProduct.name,
-          brand: p.canonicalProduct.brand,
-          metadata: JSON.parse(p.canonicalProduct.metadata) as Record<string, unknown>,
-        },
-      }))
+      products.map((p) => {
+        // Use latest snapshot price if available, otherwise cached price
+        const latestSnapshot = p.priceSnapshots[0];
+        const price = latestSnapshot?.price ?? p.price;
+        const isPromo = latestSnapshot?.isPromo ?? p.isPromo;
+        const promoDescription = latestSnapshot?.promoDescription ?? p.promoDescription;
+        const inStock = latestSnapshot?.inStock ?? p.inStock;
+        const priceTimestamp = latestSnapshot?.capturedAt?.toISOString() ?? p.updatedAt.toISOString();
+
+        return {
+          id: p.id,
+          supermarketId: p.supermarketId,
+          canonicalProductId: p.canonicalProductId,
+          externalName: p.externalName,
+          brand: p.brand,
+          price,
+          inStock,
+          isPromo,
+          promoDescription,
+          metadata: JSON.parse(p.metadata) as Record<string, unknown>,
+          priceTimestamp,
+          canonicalProduct: {
+            id: p.canonicalProduct.id,
+            categoryId: p.canonicalProduct.categoryId,
+            name: p.canonicalProduct.name,
+            brand: p.canonicalProduct.brand,
+            metadata: JSON.parse(p.canonicalProduct.metadata) as Record<string, unknown>,
+          },
+        };
+      })
     );
   }
 
   const result = compareBasket(itemsForComparison, supermarketInfos, productsMap);
   result.basketId = basketId;
+
+  const durationMs = Date.now() - startTime;
+  log.info('Comparison completed', {
+    basketId,
+    itemCount: basketItems.length,
+    supermarketCount: supermarkets.length,
+    durationMs,
+  });
 
   return result;
 }
@@ -282,5 +309,6 @@ export async function getSupermarkets(): Promise<SupermarketDTO[]> {
     name: s.name,
     slug: s.slug,
     logoUrl: s.logoUrl,
+    lastIngestionAt: s.lastIngestionAt?.toISOString() ?? null,
   }));
 }

@@ -1,3 +1,4 @@
+import { scoreMatch, passesConstraints } from '@/lib/products/matching';
 import type {
   ItemResolution,
   SupermarketComparison,
@@ -6,7 +7,7 @@ import type {
   ResolutionType,
 } from '@/types';
 
-interface BasketItemForComparison {
+export interface BasketItemForComparison {
   id: string;
   categoryId: string;
   quantity: number;
@@ -16,7 +17,7 @@ interface BasketItemForComparison {
   displayName: string;
 }
 
-interface SupermarketProductForComparison {
+export interface SupermarketProductForComparison {
   id: string;
   supermarketId: string;
   canonicalProductId: string;
@@ -27,6 +28,7 @@ interface SupermarketProductForComparison {
   isPromo: boolean;
   promoDescription: string | null;
   metadata: Record<string, unknown>;
+  priceTimestamp: string | null;
   canonicalProduct: {
     id: string;
     categoryId: string;
@@ -36,10 +38,11 @@ interface SupermarketProductForComparison {
   };
 }
 
-interface SupermarketInfo {
+export interface SupermarketInfo {
   id: string;
   name: string;
   slug: string;
+  lastIngestionAt: string | null;
 }
 
 const CURRENCY = 'USD';
@@ -57,7 +60,7 @@ export function resolveBasketItem(
     quantity: item.quantity,
   };
 
-  // Filter products to the same category
+  // Filter products to the same category and in stock
   const categoryProducts = availableProducts.filter(
     (p) => p.canonicalProduct.categoryId === item.categoryId && p.inStock
   );
@@ -92,6 +95,7 @@ function resolveExact(
       substitutionReason: 'Exact product unavailable at this supermarket',
       isPromo: false,
       promoDescription: null,
+      priceTimestamp: null,
     };
   }
 
@@ -108,6 +112,7 @@ function resolveExact(
     substitutionReason: null,
     isPromo: exactMatch.isPromo,
     promoDescription: exactMatch.promoDescription,
+    priceTimestamp: exactMatch.priceTimestamp,
   };
 }
 
@@ -117,10 +122,11 @@ function resolveFlexible(
   categoryProducts: SupermarketProductForComparison[]
 ): ItemResolution {
   const constraints = item.userConstraints;
-  let candidates = categoryProducts;
 
-  // Apply constraint filters
-  candidates = applyConstraints(candidates, constraints);
+  // Filter by hard constraints
+  let candidates = categoryProducts.filter((p) =>
+    passesConstraints(p.canonicalProduct.metadata, constraints)
+  );
 
   if (candidates.length === 0) {
     return {
@@ -136,22 +142,33 @@ function resolveFlexible(
       substitutionReason: 'No matching products available at this supermarket',
       isPromo: false,
       promoDescription: null,
+      priceTimestamp: null,
     };
   }
 
-  // Sort by price ascending, prefer exact canonical match
-  candidates.sort((a, b) => {
-    // If user selected a canonical product, prefer it
+  // Score and rank candidates
+  const scored = candidates.map((p) => ({
+    product: p,
+    score: scoreMatch(
+      { metadata: p.canonicalProduct.metadata, brand: p.brand, price: p.price },
+      constraints,
+      item.selectedCanonicalProductId ? undefined : undefined // no preferred brand in constraints for now
+    ),
+  }));
+
+  // Sort: prefer exact canonical match, then highest score, then lowest price
+  scored.sort((a, b) => {
     if (item.selectedCanonicalProductId) {
-      const aIsExact = a.canonicalProductId === item.selectedCanonicalProductId;
-      const bIsExact = b.canonicalProductId === item.selectedCanonicalProductId;
+      const aIsExact = a.product.canonicalProductId === item.selectedCanonicalProductId;
+      const bIsExact = b.product.canonicalProductId === item.selectedCanonicalProductId;
       if (aIsExact && !bIsExact) return -1;
       if (!aIsExact && bIsExact) return 1;
     }
-    return a.price - b.price;
+    if (b.score.total !== a.score.total) return b.score.total - a.score.total;
+    return a.product.price - b.product.price;
   });
 
-  const chosen = candidates[0];
+  const chosen = scored[0].product;
   const wasSubstituted =
     item.selectedCanonicalProductId != null &&
     chosen.canonicalProductId !== item.selectedCanonicalProductId;
@@ -179,34 +196,8 @@ function resolveFlexible(
     substitutionReason,
     isPromo: chosen.isPromo,
     promoDescription: chosen.promoDescription,
+    priceTimestamp: chosen.priceTimestamp,
   };
-}
-
-function applyConstraints(
-  products: SupermarketProductForComparison[],
-  constraints: UserConstraints
-): SupermarketProductForComparison[] {
-  let filtered = [...products];
-
-  for (const [key, value] of Object.entries(constraints)) {
-    if (value === null || value === undefined || value === 'any' || value === '') {
-      continue;
-    }
-
-    filtered = filtered.filter((p) => {
-      const meta = p.canonicalProduct.metadata;
-      const productValue = meta[key];
-
-      if (productValue === undefined || productValue === null) return false;
-
-      // Normalize comparison
-      const pVal = String(productValue).toLowerCase();
-      const cVal = String(value).toLowerCase();
-      return pVal === cVal;
-    });
-  }
-
-  return filtered;
 }
 
 function buildSubstitutionReason(
@@ -263,6 +254,7 @@ export function compareBasket(
       itemResults,
       unavailableCount,
       substitutionCount,
+      lastIngestionAt: supermarket.lastIngestionAt,
     });
   }
 

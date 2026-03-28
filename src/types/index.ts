@@ -6,6 +6,8 @@ export type AttributeType = 'text' | 'number' | 'enum' | 'boolean';
 
 export type ResolutionType = 'exact' | 'flexible_match' | 'unavailable';
 
+export type DataSourceType = 'mock' | 'scraper' | 'api';
+
 export interface CategoryWithAttributes {
   id: string;
   name: string;
@@ -54,6 +56,7 @@ export interface SupermarketDTO {
   name: string;
   slug: string;
   logoUrl: string | null;
+  lastIngestionAt: string | null;
 }
 
 export interface CanonicalProductDTO {
@@ -79,6 +82,7 @@ export interface ItemResolution {
   substitutionReason: string | null;
   isPromo: boolean;
   promoDescription: string | null;
+  priceTimestamp: string | null;
 }
 
 export interface SupermarketComparison {
@@ -90,6 +94,7 @@ export interface SupermarketComparison {
   itemResults: ItemResolution[];
   unavailableCount: number;
   substitutionCount: number;
+  lastIngestionAt: string | null;
 }
 
 export interface ComparisonResult {

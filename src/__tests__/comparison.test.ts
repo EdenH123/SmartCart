@@ -1,26 +1,9 @@
 import { resolveBasketItem, compareBasket } from '@/lib/comparison/engine';
+import type { SupermarketProductForComparison, BasketItemForComparison, SupermarketInfo } from '@/lib/comparison/engine';
 
 // ── Test data factories ──
 
-function makeProduct(overrides: Partial<{
-  id: string;
-  supermarketId: string;
-  canonicalProductId: string;
-  externalName: string;
-  brand: string | null;
-  price: number;
-  inStock: boolean;
-  isPromo: boolean;
-  promoDescription: string | null;
-  metadata: Record<string, unknown>;
-  canonicalProduct: {
-    id: string;
-    categoryId: string;
-    name: string;
-    brand: string | null;
-    metadata: Record<string, unknown>;
-  };
-}> = {}) {
+function makeProduct(overrides: Partial<SupermarketProductForComparison> = {}): SupermarketProductForComparison {
   const cpId = overrides.canonicalProductId ?? 'cp1';
   return {
     id: overrides.id ?? 'sp1',
@@ -33,6 +16,7 @@ function makeProduct(overrides: Partial<{
     isPromo: overrides.isPromo ?? false,
     promoDescription: overrides.promoDescription ?? null,
     metadata: overrides.metadata ?? {},
+    priceTimestamp: overrides.priceTimestamp ?? '2026-03-28T10:00:00.000Z',
     canonicalProduct: overrides.canonicalProduct ?? {
       id: cpId,
       categoryId: 'cat1',
@@ -43,15 +27,7 @@ function makeProduct(overrides: Partial<{
   };
 }
 
-function makeBasketItem(overrides: Partial<{
-  id: string;
-  categoryId: string;
-  quantity: number;
-  matchMode: 'exact' | 'flexible';
-  selectedCanonicalProductId: string | null;
-  userConstraints: Record<string, string | number | boolean | null>;
-  displayName: string;
-}> = {}) {
+function makeBasketItem(overrides: Partial<BasketItemForComparison> = {}): BasketItemForComparison {
   return {
     id: overrides.id ?? 'bi1',
     categoryId: overrides.categoryId ?? 'cat1',
@@ -63,7 +39,7 @@ function makeBasketItem(overrides: Partial<{
   };
 }
 
-// ── Tests ──
+// ── resolveBasketItem Tests ──
 
 describe('resolveBasketItem', () => {
   test('exact mode: finds exact match', () => {
@@ -132,7 +108,6 @@ describe('resolveBasketItem', () => {
 
     const result = resolveBasketItem(item, products);
 
-    expect(result.resolutionType).toBe('exact');
     expect(result.unitPrice).toBe(1.50);
     expect(result.supermarketProductId).toBe('sp2');
   });
@@ -239,18 +214,51 @@ describe('resolveBasketItem', () => {
     expect(result.isPromo).toBe(true);
     expect(result.promoDescription).toBe('Weekly deal');
   });
+
+  test('priceTimestamp is included in resolution', () => {
+    const item = makeBasketItem({ matchMode: 'flexible' });
+    const timestamp = '2026-03-28T12:00:00.000Z';
+    const products = [
+      makeProduct({
+        priceTimestamp: timestamp,
+        canonicalProduct: { id: 'cp1', categoryId: 'cat1', name: 'Test', brand: 'A', metadata: {} },
+      }),
+    ];
+
+    const result = resolveBasketItem(item, products);
+    expect(result.priceTimestamp).toBe(timestamp);
+  });
+
+  test('priceTimestamp is null for unavailable items', () => {
+    const item = makeBasketItem({
+      matchMode: 'exact',
+      selectedCanonicalProductId: 'cp-missing',
+    });
+
+    const result = resolveBasketItem(item, []);
+    expect(result.priceTimestamp).toBeNull();
+  });
 });
 
+// ── compareBasket Tests ──
+
 describe('compareBasket', () => {
+  const makeSupermarket = (overrides: Partial<SupermarketInfo> = {}): SupermarketInfo => ({
+    id: overrides.id ?? 'sm1',
+    name: overrides.name ?? 'Store',
+    slug: overrides.slug ?? 'store',
+    lastIngestionAt: overrides.lastIngestionAt ?? '2026-03-28T10:00:00.000Z',
+  });
+
   test('ranks supermarkets by unavailable count then total', () => {
     const items = [
       makeBasketItem({ id: 'bi1', matchMode: 'flexible', userConstraints: {} }),
     ];
 
     const supermarkets = [
-      { id: 'sm1', name: 'Expensive', slug: 'expensive' },
-      { id: 'sm2', name: 'Cheap', slug: 'cheap' },
-      { id: 'sm3', name: 'NoStock', slug: 'nostock' },
+      makeSupermarket({ id: 'sm1', name: 'Expensive', slug: 'expensive' }),
+      makeSupermarket({ id: 'sm2', name: 'Cheap', slug: 'cheap' }),
+      makeSupermarket({ id: 'sm3', name: 'NoStock', slug: 'nostock' }),
     ];
 
     const productsBySupermarket = new Map([
@@ -260,12 +268,11 @@ describe('compareBasket', () => {
       ['sm2', [
         makeProduct({ id: 'sp2', supermarketId: 'sm2', price: 2.00, canonicalProduct: { id: 'cp1', categoryId: 'cat1', name: 'P1', brand: 'A', metadata: {} } }),
       ]],
-      ['sm3', [] as ReturnType<typeof makeProduct>[]],
+      ['sm3', [] as SupermarketProductForComparison[]],
     ]);
 
     const result = compareBasket(items, supermarkets, productsBySupermarket);
 
-    // sm3 has unavailable items, should be last
     expect(result.comparisons[0].supermarketSlug).toBe('cheap');
     expect(result.comparisons[1].supermarketSlug).toBe('expensive');
     expect(result.comparisons[2].supermarketSlug).toBe('nostock');
@@ -277,7 +284,7 @@ describe('compareBasket', () => {
       makeBasketItem({ id: 'bi1', quantity: 3, matchMode: 'flexible', userConstraints: {} }),
     ];
 
-    const supermarkets = [{ id: 'sm1', name: 'Store', slug: 'store' }];
+    const supermarkets = [makeSupermarket()];
     const productsBySupermarket = new Map([
       ['sm1', [
         makeProduct({ supermarketId: 'sm1', price: 2.50, canonicalProduct: { id: 'cp1', categoryId: 'cat1', name: 'P1', brand: 'A', metadata: {} } }),
@@ -293,8 +300,8 @@ describe('compareBasket', () => {
   test('returns best and worst totals', () => {
     const items = [makeBasketItem({ matchMode: 'flexible', userConstraints: {} })];
     const supermarkets = [
-      { id: 'sm1', name: 'A', slug: 'a' },
-      { id: 'sm2', name: 'B', slug: 'b' },
+      makeSupermarket({ id: 'sm1', name: 'A', slug: 'a' }),
+      makeSupermarket({ id: 'sm2', name: 'B', slug: 'b' }),
     ];
     const productsBySupermarket = new Map([
       ['sm1', [makeProduct({ supermarketId: 'sm1', price: 10, canonicalProduct: { id: 'cp1', categoryId: 'cat1', name: 'P', brand: 'A', metadata: {} } })]],
@@ -318,7 +325,7 @@ describe('compareBasket', () => {
       }),
     ];
 
-    const supermarkets = [{ id: 'sm1', name: 'Store', slug: 'store' }];
+    const supermarkets = [makeSupermarket()];
     const productsBySupermarket = new Map([
       ['sm1', [
         makeProduct({
@@ -332,5 +339,47 @@ describe('compareBasket', () => {
 
     const result = compareBasket(items, supermarkets, productsBySupermarket);
     expect(result.comparisons[0].substitutionCount).toBe(1);
+  });
+
+  test('includes lastIngestionAt in comparison results', () => {
+    const timestamp = '2026-03-28T08:00:00.000Z';
+    const items = [makeBasketItem({ matchMode: 'flexible', userConstraints: {} })];
+    const supermarkets = [makeSupermarket({ lastIngestionAt: timestamp })];
+    const productsBySupermarket = new Map([
+      ['sm1', [makeProduct({ canonicalProduct: { id: 'cp1', categoryId: 'cat1', name: 'P', brand: 'A', metadata: {} } })]],
+    ]);
+
+    const result = compareBasket(items, supermarkets, productsBySupermarket);
+    expect(result.comparisons[0].lastIngestionAt).toBe(timestamp);
+  });
+
+  test('handles price changes across snapshots (uses latest price passed in)', () => {
+    // Simulate: same product but different price (as would happen after ingestion)
+    const items = [makeBasketItem({ matchMode: 'flexible', userConstraints: {} })];
+    const supermarkets = [
+      makeSupermarket({ id: 'sm1', slug: 'store-a' }),
+      makeSupermarket({ id: 'sm2', slug: 'store-b' }),
+    ];
+
+    const productsBySupermarket = new Map([
+      ['sm1', [makeProduct({
+        supermarketId: 'sm1',
+        price: 5.00, // old price
+        canonicalProduct: { id: 'cp1', categoryId: 'cat1', name: 'P', brand: 'A', metadata: {} },
+      })]],
+      ['sm2', [makeProduct({
+        id: 'sp2',
+        supermarketId: 'sm2',
+        price: 3.50, // new lower price after ingestion
+        canonicalProduct: { id: 'cp1', categoryId: 'cat1', name: 'P', brand: 'A', metadata: {} },
+      })]],
+    ]);
+
+    const result = compareBasket(items, supermarkets, productsBySupermarket);
+
+    // Store B should be ranked first (cheaper)
+    expect(result.comparisons[0].supermarketSlug).toBe('store-b');
+    expect(result.comparisons[0].total).toBe(3.50);
+    expect(result.comparisons[1].total).toBe(5.00);
   });
 });

@@ -3,13 +3,15 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Clear existing data
+  // Clear existing data (order matters for FK constraints)
   await prisma.basketItem.deleteMany();
   await prisma.basket.deleteMany();
+  await prisma.priceSnapshot.deleteMany();
   await prisma.supermarketProduct.deleteMany();
   await prisma.canonicalProduct.deleteMany();
   await prisma.productAttributeDefinition.deleteMany();
   await prisma.productCategory.deleteMany();
+  await prisma.dataSource.deleteMany();
   await prisma.supermarket.deleteMany();
 
   // ── Categories ──
@@ -98,15 +100,27 @@ async function main() {
   }
 
   // ── Supermarkets ──
+  const now = new Date();
   const freshmart = await prisma.supermarket.create({
-    data: { name: 'FreshMart', slug: 'freshmart' },
+    data: { name: 'FreshMart', slug: 'freshmart', lastIngestionAt: now },
   });
   const valueGrocer = await prisma.supermarket.create({
-    data: { name: 'ValueGrocer', slug: 'valuegrocer' },
+    data: { name: 'ValueGrocer', slug: 'valuegrocer', lastIngestionAt: now },
   });
   const greenBasket = await prisma.supermarket.create({
-    data: { name: 'GreenBasket', slug: 'greenbasket' },
+    data: { name: 'GreenBasket', slug: 'greenbasket', lastIngestionAt: now },
   });
+
+  // ── Data Sources ──
+  for (const sm of [freshmart, valueGrocer, greenBasket]) {
+    await prisma.dataSource.create({
+      data: {
+        supermarketId: sm.id,
+        type: 'mock',
+        config: JSON.stringify({ variationPercent: 0.10 }),
+      },
+    });
+  }
 
   // ── Canonical Products & Supermarket Products ──
   // Helper to create canonical + supermarket listings
@@ -139,7 +153,7 @@ async function main() {
     });
 
     for (const listing of listings) {
-      await prisma.supermarketProduct.create({
+      const sp = await prisma.supermarketProduct.create({
         data: {
           supermarketId: listing.supermarketId,
           canonicalProductId: canonical.id,
@@ -150,6 +164,17 @@ async function main() {
           isPromo: listing.isPromo ?? false,
           promoDescription: listing.promoDescription ?? null,
           metadata: JSON.stringify(metadata),
+        },
+      });
+
+      // Create initial price snapshot
+      await prisma.priceSnapshot.create({
+        data: {
+          supermarketProductId: sp.id,
+          price: listing.price,
+          isPromo: listing.isPromo ?? false,
+          promoDescription: listing.promoDescription ?? null,
+          inStock: listing.inStock ?? true,
         },
       });
     }
@@ -380,8 +405,8 @@ async function main() {
   console.log(`✓ Seeded database successfully`);
   console.log(`  - 12 product categories`);
   console.log(`  - 30 canonical products`);
-  console.log(`  - 3 supermarkets`);
-  console.log(`  - ~80 supermarket listings`);
+  console.log(`  - 3 supermarkets with mock data sources`);
+  console.log(`  - ~80 supermarket listings with initial price snapshots`);
   console.log(`  - 1 demo basket (id: ${demoBasket.id})`);
 }
 

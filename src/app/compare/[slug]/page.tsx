@@ -3,9 +3,9 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, AlertTriangle, RefreshCw, Tag, Check, X as XIcon } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, RefreshCw, Tag, Check, X as XIcon, Clock } from 'lucide-react';
 import { compareBasketAction } from '@/lib/actions';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, formatTimeAgo } from '@/lib/utils';
 import type { ComparisonResult, SupermarketComparison, ItemResolution } from '@/types';
 
 export default function BreakdownPage() {
@@ -80,7 +80,15 @@ function BreakdownPageInner() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{comparison.supermarketName}</h1>
-          <p className="mt-1 text-sm text-gray-500">Full basket breakdown</p>
+          <div className="mt-1 flex items-center gap-3">
+            <p className="text-sm text-gray-500">Full basket breakdown</p>
+            {comparison.lastIngestionAt && (
+              <span className="flex items-center gap-1 text-xs text-gray-400">
+                <Clock className="h-3 w-3" />
+                Prices updated {formatTimeAgo(comparison.lastIngestionAt)}
+              </span>
+            )}
+          </div>
         </div>
         <div className="text-right">
           <p className="text-3xl font-bold text-gray-900">{formatPrice(comparison.total)}</p>
@@ -176,6 +184,12 @@ function ItemRow({ item }: { item: ItemResolution }) {
             {isUnavailable && (
               <span className="badge-unavailable text-[10px]">Unavailable</span>
             )}
+            {item.priceTimestamp && !isUnavailable && (
+              <span className="flex items-center gap-0.5 text-[10px] text-gray-400">
+                <Clock className="h-2.5 w-2.5" />
+                {formatTimeAgo(item.priceTimestamp)}
+              </span>
+            )}
           </div>
         </div>
 
@@ -186,12 +200,12 @@ function ItemRow({ item }: { item: ItemResolution }) {
               <p className="text-lg font-semibold text-gray-900">{formatPrice(item.totalPrice)}</p>
               {item.quantity > 1 && (
                 <p className="text-xs text-gray-500">
-                  {formatPrice(item.unitPrice!)} × {item.quantity}
+                  {formatPrice(item.unitPrice!)} x {item.quantity}
                 </p>
               )}
             </>
           ) : (
-            <p className="text-lg font-semibold text-gray-400">—</p>
+            <p className="text-lg font-semibold text-gray-400">{'\u2014'}</p>
           )}
         </div>
       </div>
