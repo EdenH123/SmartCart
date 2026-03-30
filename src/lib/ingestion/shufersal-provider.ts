@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as zlib from 'zlib';
 import { prisma } from '@/lib/db/client';
 import { createLogger } from '@/lib/logger';
+import { findByBarcode } from '@/lib/products/barcode-matching';
 import type { IngestionProvider, IngestionResult } from './types';
 
 const log = createLogger('ingestion:shufersal');
@@ -1106,7 +1107,7 @@ export class ShufersalProvider implements IngestionProvider {
 
 // ── Canonical Product Matching ──
 
-async function findOrCreateCanonicalProduct(
+export async function findOrCreateCanonicalProduct(
   categoryId: string,
   categorySlug: string,
   attributes: Record<string, string>,
@@ -1114,7 +1115,18 @@ async function findOrCreateCanonicalProduct(
   itemName: string,
   barcode?: string,
 ) {
-  // Try to find existing canonical product with same category, brand, and attributes
+  // 1. Try barcode match first (definitive cross-chain matching)
+  if (barcode) {
+    const barcodeResult = await findByBarcode(barcode);
+    if (barcodeResult.matched && barcodeResult.canonicalProductId) {
+      const existing = await prisma.canonicalProduct.findUnique({
+        where: { id: barcodeResult.canonicalProductId },
+      });
+      if (existing) return existing;
+    }
+  }
+
+  // 2. Fall back to category + brand + attribute matching (heuristic)
   const existingProducts = await prisma.canonicalProduct.findMany({
     where: {
       categoryId,
@@ -1122,7 +1134,6 @@ async function findOrCreateCanonicalProduct(
     },
   });
 
-  // Match by attributes
   for (const existing of existingProducts) {
     let existingMeta: Record<string, string>;
     try {
@@ -1131,17 +1142,23 @@ async function findOrCreateCanonicalProduct(
       continue;
     }
 
-    // Check if all attributes match
     const attrKeys = Object.keys(attributes);
     if (attrKeys.length === 0) continue;
 
     const allMatch = attrKeys.every(key => existingMeta[key] === attributes[key]);
     if (allMatch && Object.keys(existingMeta).length === attrKeys.length) {
+      // If we matched by attributes and the existing product has no barcode, update it
+      if (barcode && !existing.barcode) {
+        await prisma.canonicalProduct.update({
+          where: { id: existing.id },
+          data: { barcode },
+        });
+      }
       return existing;
     }
   }
 
-  // Create a new canonical product
+  // 3. Create a new canonical product
   const name = buildCanonicalName(categorySlug, attributes, brand);
   const normalizedName = name.toLowerCase().replace(/\s+/g, '-');
   const searchableText = [itemName, brand, ...Object.values(attributes)].filter(Boolean).join(' ').toLowerCase();
