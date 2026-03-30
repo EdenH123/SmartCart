@@ -11,9 +11,20 @@ import {
   updateBasketItemQuantity,
   clearBasket,
   loadDemoBasket,
+  quickAddToBasket,
+  getItemPriceRanges,
 } from '@/lib/actions';
 import AddProductModal from '@/components/AddProductModal';
 import type { BasketItemDTO, BasketItemInput } from '@/types';
+
+const POPULAR_ITEMS: { label: string; categorySlug: string; constraints: Record<string, string> }[] = [
+  { label: 'חלב 3%', categorySlug: 'milk', constraints: { type: 'רגיל', fat: '3%', volume: '1 ליטר' } },
+  { label: 'ביצים L 12', categorySlug: 'eggs', constraints: { size: 'L', packCount: '12', type: 'רגיל' } },
+  { label: 'לחם לבן', categorySlug: 'bread', constraints: { type: 'לבן', weight: '750 גרם' } },
+  { label: 'חזה עוף 1ק"ג', categorySlug: 'chicken-breast', constraints: { type: 'רגיל', weight: '1 ק״ג' } },
+  { label: 'קוטג\' 5%', categorySlug: 'cottage-cheese', constraints: { fat: '5%', weight: '250 גרם' } },
+  { label: 'אורז 1ק"ג', categorySlug: 'rice', constraints: { type: 'לבן', weight: '1 ק״ג' } },
+];
 
 export default function BasketPage() {
   return (
@@ -37,11 +48,19 @@ function BasketPageInner() {
   const [items, setItems] = useState<BasketItemDTO[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [priceRanges, setPriceRanges] = useState<Record<string, { min: number; max: number; count: number } | null>>({});
 
   const loadBasket = useCallback(async (id: string) => {
     const basketItems = await getBasketItems(id);
     setItems(basketItems);
     setLoading(false);
+    // Load price ranges in parallel
+    if (basketItems.length > 0) {
+      const ranges = await getItemPriceRanges(id);
+      setPriceRanges(ranges);
+    } else {
+      setPriceRanges({});
+    }
   }, []);
 
   useEffect(() => {
@@ -92,6 +111,12 @@ function BasketPageInner() {
   const handleOptimize = () => {
     if (!basketId) return;
     router.push(`/optimize?basketId=${basketId}`);
+  };
+
+  const handleQuickAdd = async (item: typeof POPULAR_ITEMS[number]) => {
+    if (!basketId) return;
+    await quickAddToBasket(basketId, item.categorySlug, item.constraints, item.label);
+    await loadBasket(basketId);
   };
 
   if (loading) {
@@ -153,6 +178,21 @@ function BasketPageInner() {
               טענו סל לדוגמה
             </button>
           </div>
+          <div className="mt-8">
+            <p className="text-sm font-medium text-gray-700 mb-3">פריטים פופולריים</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {POPULAR_ITEMS.map((item) => (
+                <button
+                  key={item.categorySlug}
+                  onClick={() => handleQuickAdd(item)}
+                  className="inline-flex items-center gap-1 rounded-full bg-gray-100 hover:bg-brand-50 hover:text-brand-700 px-3 py-1.5 text-sm transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -171,6 +211,14 @@ function BasketPageInner() {
                       </span>
                     </div>
                     <p className="mt-0.5 text-xs text-gray-500">{item.categoryName}</p>
+                    {priceRanges[item.id] && (
+                      <p className="mt-0.5 text-xs text-gray-400">
+                        {priceRanges[item.id]!.min === priceRanges[item.id]!.max
+                          ? `₪${priceRanges[item.id]!.min.toFixed(2)}`
+                          : `₪${priceRanges[item.id]!.min.toFixed(2)} - ₪${priceRanges[item.id]!.max.toFixed(2)}`}
+                        {' '}({priceRanges[item.id]!.count} סופרים)
+                      </p>
+                    )}
                     {Object.keys(item.userConstraints).length > 0 && (
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         {Object.entries(item.userConstraints).map(([key, value]) => (
@@ -221,6 +269,23 @@ function BasketPageInner() {
               <Sparkles className="h-5 w-5" />
               מטבו את הסל שלי
             </button>
+          </div>
+
+          {/* Popular items quick-add */}
+          <div className="mt-8">
+            <p className="text-sm font-medium text-gray-700 mb-3">פריטים פופולריים</p>
+            <div className="flex flex-wrap gap-2">
+              {POPULAR_ITEMS.map((item) => (
+                <button
+                  key={item.categorySlug}
+                  onClick={() => handleQuickAdd(item)}
+                  className="inline-flex items-center gap-1 rounded-full bg-gray-100 hover:bg-brand-50 hover:text-brand-700 px-3 py-1.5 text-sm transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {item.label}
+                </button>
+              ))}
+            </div>
           </div>
         </>
       )}

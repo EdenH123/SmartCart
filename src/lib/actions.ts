@@ -427,6 +427,115 @@ export async function optimizeBasketAction(basketId: string): Promise<Optimizati
   return result;
 }
 
+// ── Quick Add ──
+
+export async function quickAddToBasket(
+  basketId: string,
+  categorySlug: string,
+  constraints: Record<string, string>,
+  displayName: string
+): Promise<BasketItemDTO | null> {
+  const category = await prisma.productCategory.findUnique({
+    where: { slug: categorySlug },
+  });
+
+  if (!category) {
+    log.warn('quickAddToBasket: category not found', { categorySlug });
+    return null;
+  }
+
+  const item = await prisma.basketItem.create({
+    data: {
+      basketId,
+      categoryId: category.id,
+      quantity: 1,
+      matchMode: 'flexible',
+      selectedCanonicalProductId: null,
+      userConstraints: JSON.stringify(constraints),
+      displayName,
+    },
+    include: { category: true },
+  });
+
+  return {
+    id: item.id,
+    basketId: item.basketId,
+    categoryId: item.categoryId,
+    categoryName: item.category.name,
+    quantity: item.quantity,
+    matchMode: item.matchMode as MatchMode,
+    selectedCanonicalProductId: item.selectedCanonicalProductId,
+    userConstraints: JSON.parse(item.userConstraints) as UserConstraints,
+    displayName: item.displayName,
+    createdAt: item.createdAt.toISOString(),
+  };
+}
+
+// ── Price Ranges ──
+
+export async function getItemPriceRanges(
+  basketId: string
+): Promise<Record<string, { min: number; max: number; count: number } | null>> {
+  const basketItems = await prisma.basketItem.findMany({
+    where: { basketId },
+  });
+
+  const result: Record<string, { min: number; max: number; count: number } | null> = {};
+
+  for (const item of basketItems) {
+    let whereClause: { canonicalProduct: { categoryId?: string; id?: string }; inStock: boolean };
+
+    if (item.matchMode === 'exact' && item.selectedCanonicalProductId) {
+      whereClause = {
+        canonicalProduct: { id: item.selectedCanonicalProductId },
+        inStock: true,
+      };
+    } else {
+      whereClause = {
+        canonicalProduct: { categoryId: item.categoryId },
+        inStock: true,
+      };
+    }
+
+    const products = await prisma.supermarketProduct.findMany({
+      where: whereClause,
+      select: {
+        price: true,
+        supermarketId: true,
+        priceSnapshots: {
+          orderBy: { capturedAt: 'desc' },
+          take: 1,
+          select: { price: true, inStock: true },
+        },
+      },
+    });
+
+    const prices: number[] = [];
+    const supermarketIds = new Set<string>();
+
+    for (const p of products) {
+      const snapshot = p.priceSnapshots[0];
+      const inStock = snapshot?.inStock ?? true;
+      if (!inStock) continue;
+      const price = snapshot?.price ?? p.price;
+      prices.push(price);
+      supermarketIds.add(p.supermarketId);
+    }
+
+    if (prices.length === 0) {
+      result[item.id] = null;
+    } else {
+      result[item.id] = {
+        min: Math.min(...prices),
+        max: Math.max(...prices),
+        count: supermarketIds.size,
+      };
+    }
+  }
+
+  return result;
+}
+
 // ── Supermarket Info ──
 
 export async function getSupermarkets(): Promise<SupermarketDTO[]> {

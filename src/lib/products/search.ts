@@ -4,7 +4,8 @@ import type { CategoryWithAttributes, ProductSearchResult } from '@/types';
 export async function searchCategories(query: string): Promise<CategoryWithAttributes[]> {
   if (!query || query.length < 1) return [];
 
-  const categories = await prisma.productCategory.findMany({
+  // Search categories by name, and also find categories that have matching products
+  const categoriesByName = await prisma.productCategory.findMany({
     where: {
       name: { contains: query },
     },
@@ -13,6 +14,30 @@ export async function searchCategories(query: string): Promise<CategoryWithAttri
         orderBy: { sortOrder: 'asc' },
       },
     },
+  });
+
+  // Also search for categories that have matching canonical products
+  const categoriesByProduct = await prisma.productCategory.findMany({
+    where: {
+      canonicalProducts: {
+        some: {
+          searchableText: { contains: query },
+        },
+      },
+    },
+    include: {
+      attributeDefinitions: {
+        orderBy: { sortOrder: 'asc' },
+      },
+    },
+  });
+
+  // Merge and deduplicate
+  const seen = new Set<string>();
+  const categories = [...categoriesByName, ...categoriesByProduct].filter((cat) => {
+    if (seen.has(cat.id)) return false;
+    seen.add(cat.id);
+    return true;
   });
 
   return categories.map((cat) => ({

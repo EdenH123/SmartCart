@@ -9,7 +9,7 @@ const log = createLogger('ingestion:shufersal');
 
 // ── Types ──
 
-interface ShufersalItem {
+export interface ShufersalItem {
   PriceUpdateDate: string;
   ItemCode: string;
   ItemType: string;
@@ -68,7 +68,7 @@ const BRAND_MAP: Record<string, string> = {
   'מי עדן': 'מי עדן',
 };
 
-function normalizeBrand(manufacturerName: string, itemName: string): string | null {
+export function normalizeBrand(manufacturerName: string, itemName: string): string | null {
   // Try direct match from manufacturer name
   const trimmed = manufacturerName.trim();
   for (const [key, value] of Object.entries(BRAND_MAP)) {
@@ -797,7 +797,7 @@ const CATEGORY_MATCHERS: CategoryMatcher[] = [
 
 // ── Product Name Cleanup ──
 
-function cleanProductName(name: string): string {
+export function cleanProductName(name: string): string {
   let cleaned = name;
 
   // Normalize multiple spaces to single space
@@ -820,7 +820,7 @@ function cleanProductName(name: string): string {
 
 // ── XML Parser ──
 
-function parseXmlItems(xml: string): ShufersalItem[] {
+export function parseXmlItems(xml: string): ShufersalItem[] {
   const items: ShufersalItem[] = [];
   const itemRegex = /<Item>([\s\S]*?)<\/Item>/g;
   let match: RegExpExecArray | null;
@@ -867,7 +867,7 @@ function findLatestGzFile(dataDir: string, chainId: string): string | null {
 
 // ── Category Matching ──
 
-function matchCategory(item: ShufersalItem): CategoryMatch | null {
+export function matchCategory(item: ShufersalItem): CategoryMatch | null {
   const name = item.ItemName;
 
   for (const matcher of CATEGORY_MATCHERS) {
@@ -1033,6 +1033,7 @@ export class ShufersalProvider implements IngestionProvider {
             match.attributes,
             match.brand,
             item.ItemName,
+            item.ItemCode,
           );
 
           // Create supermarket product
@@ -1111,6 +1112,7 @@ async function findOrCreateCanonicalProduct(
   attributes: Record<string, string>,
   brand: string | null,
   itemName: string,
+  barcode?: string,
 ) {
   // Try to find existing canonical product with same category, brand, and attributes
   const existingProducts = await prisma.canonicalProduct.findMany({
@@ -1150,13 +1152,14 @@ async function findOrCreateCanonicalProduct(
       name,
       normalizedName,
       brand,
+      barcode: barcode ?? null,
       metadata: JSON.stringify(attributes),
       searchableText,
     },
   });
 }
 
-function buildCanonicalName(
+export function buildCanonicalName(
   categorySlug: string,
   attributes: Record<string, string>,
   brand: string | null,

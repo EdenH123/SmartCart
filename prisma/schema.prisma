@@ -43,6 +43,7 @@ model CanonicalProduct {
   name           String
   normalizedName String
   brand          String?
+  barcode        String? // ItemCode from supermarket XML for cross-chain matching
   metadata       String  @default("{}") // JSON
   searchableText String
   isActive       Boolean @default(true)
@@ -95,7 +96,7 @@ model PriceSnapshot {
   id                   String   @id @default(cuid())
   supermarketProductId String
   price                Float
-  currency             String   @default("USD")
+  currency             String   @default("ILS")
   isPromo              Boolean  @default(false)
   promoDescription     String?
   inStock              Boolean  @default(true)
