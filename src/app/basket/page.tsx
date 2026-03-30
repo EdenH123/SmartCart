@@ -161,50 +161,51 @@ function BasketPageInner() {
         <>
           <div className="mt-6 space-y-3">
             {items.map((item) => (
-              <div key={item.id} className="card flex items-center gap-4 p-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-gray-900 truncate">{item.displayName}</p>
-                    <span className={item.matchMode === 'exact' ? 'badge-exact' : 'badge-flexible'}>
-                      {item.matchMode === 'exact' ? 'מדויק' : 'גמיש'}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-xs text-gray-500">{item.categoryName}</p>
-                  {Object.keys(item.userConstraints).length > 0 && (
-                    <div className="mt-1.5 flex flex-wrap gap-1">
-                      {Object.entries(item.userConstraints).map(([key, value]) => (
-                        <span key={key} className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
-                          {key}: {String(value)}
-                        </span>
-                      ))}
+              <div key={item.id} className="card p-4">
+                <div className="flex items-start gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium text-gray-900 truncate">{item.displayName}</p>
+                      <span className={item.matchMode === 'exact' ? 'badge-exact' : 'badge-flexible'}>
+                        {item.matchMode === 'exact' ? 'מדויק' : 'גמיש'}
+                      </span>
                     </div>
-                  )}
-                </div>
+                    <p className="mt-0.5 text-xs text-gray-500">{item.categoryName}</p>
+                    {Object.keys(item.userConstraints).length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {Object.entries(item.userConstraints).map(([key, value]) => (
+                          <span key={key} className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
+                            {key}: {String(value)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
-                {/* Quantity controls */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                    className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                    disabled={item.quantity <= 1}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <span className="min-w-[1.5rem] text-center text-sm font-medium">{item.quantity}</span>
-                  <button
-                    onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                    className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
+                  {/* Quantity controls + delete */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                      className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                      disabled={item.quantity <= 1}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <span className="min-w-[1.5rem] text-center text-sm font-medium">{item.quantity}</span>
+                    <button
+                      onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                      className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleRemove(item.id)}
+                      className="rounded-md p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-
-                <button
-                  onClick={() => handleRemove(item.id)}
-                  className="rounded-md p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
               </div>
             ))}
           </div>

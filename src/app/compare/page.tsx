@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Trophy, AlertTriangle, ArrowRight, RefreshCw, TrendingDown, ArrowLeft, Clock, Info } from 'lucide-react';
+import { Trophy, AlertTriangle, ArrowRight, RefreshCw, TrendingDown, Clock, Info } from 'lucide-react';
 import { compareBasketAction } from '@/lib/actions';
 import { formatPrice, formatTimeAgo } from '@/lib/utils';
 import type { ComparisonResult, SupermarketComparison } from '@/types';
@@ -92,7 +92,7 @@ function ComparePageInner() {
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
       <Link href="/basket" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6">
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowRight className="h-4 w-4" />
         חזרה לסל
       </Link>
 
@@ -143,8 +143,10 @@ function SupermarketCard({
   isBest: boolean;
   basketId: string;
 }) {
+  const slugClass = `supermarket-${comparison.supermarketSlug}`;
+
   return (
-    <div className={`card overflow-hidden ${isBest ? 'ring-2 ring-brand-500' : ''}`}>
+    <div className={`card overflow-hidden ${slugClass} ${isBest ? 'ring-2 ring-brand-500' : ''}`}>
       {isBest && (
         <div className="bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white flex items-center gap-1.5">
           <Trophy className="h-3.5 w-3.5" />
@@ -179,13 +181,13 @@ function SupermarketCard({
         <div className="mt-4 flex flex-wrap gap-2">
           {comparison.unavailableCount > 0 && (
             <span className="badge-unavailable">
-              <AlertTriangle className="mr-1 h-3 w-3" />
+              <AlertTriangle className="ml-1 h-3 w-3" />
               {comparison.unavailableCount} לא זמין
             </span>
           )}
           {comparison.substitutionCount > 0 && (
             <span className="badge-substituted">
-              <RefreshCw className="mr-1 h-3 w-3" />
+              <RefreshCw className="ml-1 h-3 w-3" />
               {comparison.substitutionCount} תחליפים
             </span>
           )}
@@ -215,7 +217,7 @@ function SupermarketCard({
                     <span className="badge-unavailable text-[10px]">חסר</span>
                   )}
                 </div>
-                <span className="text-gray-900 font-medium ml-2 whitespace-nowrap">
+                <span className="text-gray-900 font-medium mr-2 whitespace-nowrap">
                   {item.totalPrice != null
                     ? `${formatPrice(item.totalPrice)}${item.quantity > 1 ? ` (x${item.quantity})` : ''}`
                     : '\u2014'}

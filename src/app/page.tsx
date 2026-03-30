@@ -14,7 +14,7 @@ export default function HomePage() {
         <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-600">
           בנו את הסל, השוו מחירים, וגלו תחליפים זולים יותר. מצאו איפה הקנייה השבועית הכי משתלמת.
         </p>
-        <div className="mt-10 flex items-center justify-center gap-4">
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link href="/basket" className="btn-primary gap-2 px-6 py-3 text-base">
             <ShoppingCart className="h-5 w-5" />
             התחילו לבנות סל

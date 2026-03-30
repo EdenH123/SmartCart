@@ -51,6 +51,30 @@ async function main() {
   const cereal = await prisma.productCategory.create({
     data: { name: 'דגני בוקר', slug: 'cereal' },
   });
+  const coffee = await prisma.productCategory.create({
+    data: { name: 'קפה', slug: 'coffee' },
+  });
+  const oil = await prisma.productCategory.create({
+    data: { name: 'שמן', slug: 'oil' },
+  });
+  const sugar = await prisma.productCategory.create({
+    data: { name: 'סוכר', slug: 'sugar' },
+  });
+  const snacks = await prisma.productCategory.create({
+    data: { name: 'חטיפים', slug: 'snacks' },
+  });
+  const beverages = await prisma.productCategory.create({
+    data: { name: 'שתייה', slug: 'beverages' },
+  });
+  const cleaning = await prisma.productCategory.create({
+    data: { name: 'ניקיון', slug: 'cleaning' },
+  });
+  const frozen = await prisma.productCategory.create({
+    data: { name: 'קפואים', slug: 'frozen' },
+  });
+  const cheese = await prisma.productCategory.create({
+    data: { name: 'גבינות', slug: 'cheese' },
+  });
 
   // ── Attribute Definitions ──
   const attrDefs = [
@@ -93,6 +117,30 @@ async function main() {
     // דגני בוקר
     { categoryId: cereal.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['קורנפלקס', 'גרנולה', 'מוזלי', 'שיבולת שועל']), sortOrder: 1 },
     { categoryId: cereal.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['375 גרם', '500 גרם', '750 גרם']), sortOrder: 2 },
+    // קפה
+    { categoryId: coffee.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['נמס', 'טורקי', 'קפסולות', 'פולים']), sortOrder: 1 },
+    { categoryId: coffee.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['100 גרם', '200 גרם', '500 גרם']), sortOrder: 2 },
+    // שמן
+    { categoryId: oil.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['זית', 'קנולה', 'חמניות', 'צמחי']), sortOrder: 1 },
+    { categoryId: oil.id, key: 'volume', label: 'נפח', type: 'enum', possibleValues: JSON.stringify(['500 מ״ל', '750 מ״ל', '1 ליטר']), sortOrder: 2 },
+    // סוכר
+    { categoryId: sugar.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['לבן', 'חום', 'סוכרזית']), sortOrder: 1 },
+    { categoryId: sugar.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['500 גרם', '1 ק״ג']), sortOrder: 2 },
+    // חטיפים
+    { categoryId: snacks.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['במבה', 'ביסלי', 'צ׳יפס', 'פופקורן', 'אחר']), sortOrder: 1 },
+    { categoryId: snacks.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['50 גרם', '100 גרם', '200 גרם']), sortOrder: 2 },
+    // שתייה
+    { categoryId: beverages.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['מים', 'מיץ', 'סודה', 'בירה']), sortOrder: 1 },
+    { categoryId: beverages.id, key: 'volume', label: 'נפח', type: 'enum', possibleValues: JSON.stringify(['500 מ״ל', '1 ליטר', '1.5 ליטר', '2 ליטר']), sortOrder: 2 },
+    // ניקיון
+    { categoryId: cleaning.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['כלים', 'כביסה', 'רצפה', 'אסלה', 'כללי']), sortOrder: 1 },
+    { categoryId: cleaning.id, key: 'volume', label: 'נפח', type: 'enum', possibleValues: JSON.stringify(['500 מ״ל', '1 ליטר', '2 ליטר']), sortOrder: 2 },
+    // קפואים
+    { categoryId: frozen.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['ירקות', 'פיצה', 'בורקס', 'שניצל', 'גלידה']), sortOrder: 1 },
+    { categoryId: frozen.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['400 גרם', '500 גרם', '1 ק״ג']), sortOrder: 2 },
+    // גבינות
+    { categoryId: cheese.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['צהובה', 'לבנה', 'שמנת', 'בולגרית', 'מוצרלה']), sortOrder: 1 },
+    { categoryId: cheese.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['200 גרם', '250 גרם', '500 גרם']), sortOrder: 2 },
   ];
 
   for (const attr of attrDefs) {
@@ -355,6 +403,127 @@ async function main() {
     { supermarketId: yochananof.id, externalName: 'שיבולת שועל אוסם 500 גרם', price: 11.90 },
   ]);
 
+  // ── קפה ──
+  await seedProduct(coffee.id, 'קפה נמס 200 גרם', 'עלית', { type: 'נמס', weight: '200 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'עלית קפה נמס 200 גרם', price: 22.90 },
+    { supermarketId: yochananof.id, externalName: 'קפה נמס עלית 200 גרם', price: 21.90 },
+    { supermarketId: ramiLevy.id, externalName: 'עלית קפה נמס קלאסי 200 גרם', price: 23.90 },
+  ]);
+  await seedProduct(coffee.id, 'קפה טורקי 200 גרם', 'עלית', { type: 'טורקי', weight: '200 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'עלית קפה טורקי 200 גרם', price: 18.90 },
+    { supermarketId: yochananof.id, externalName: 'קפה טורקי עלית 200 גרם', price: 17.90 },
+    { supermarketId: ramiLevy.id, externalName: 'עלית טורקי קלאסי 200 גרם', price: 19.50 },
+  ]);
+  await seedProduct(coffee.id, 'קפסולות נספרסו 100 גרם', 'נספרסו', { type: 'קפסולות', weight: '100 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'קפסולות נספרסו 10 יח׳', price: 19.90 },
+    { supermarketId: yochananof.id, externalName: 'נספרסו קפסולות 10 יח׳', price: 18.90 },
+    { supermarketId: ramiLevy.id, externalName: 'קפסולות נספרסו קלאסיק 10 יח׳', price: 20.90 },
+  ]);
+
+  // ── שמן ──
+  await seedProduct(oil.id, 'שמן זית כתית מעולה 750 מ״ל', null, { type: 'זית', volume: '750 מ״ל' }, [
+    { supermarketId: shufersal.id, externalName: 'שמן זית כתית מעולה 750 מ״ל', price: 34.90 },
+    { supermarketId: yochananof.id, externalName: 'שמן זית כתית 750 מ״ל', price: 32.90 },
+    { supermarketId: ramiLevy.id, externalName: 'שמן זית כתית מעולה 750 מ״ל', price: 36.90 },
+  ]);
+  await seedProduct(oil.id, 'שמן קנולה 1 ליטר', null, { type: 'קנולה', volume: '1 ליטר' }, [
+    { supermarketId: shufersal.id, externalName: 'שמן קנולה 1 ליטר', price: 12.90 },
+    { supermarketId: yochananof.id, externalName: 'שמן קנולה 1 ליטר', price: 11.90 },
+    { supermarketId: ramiLevy.id, externalName: 'שמן קנולה טהור 1 ליטר', price: 13.50 },
+  ]);
+
+  // ── סוכר ──
+  await seedProduct(sugar.id, 'סוכר לבן 1 ק״ג', 'סוגת', { type: 'לבן', weight: '1 ק״ג' }, [
+    { supermarketId: shufersal.id, externalName: 'סוגת סוכר לבן 1 ק״ג', price: 7.90 },
+    { supermarketId: yochananof.id, externalName: 'סוכר סוגת לבן 1 ק״ג', price: 7.50 },
+    { supermarketId: ramiLevy.id, externalName: 'סוגת סוכר לבן דק 1 ק״ג', price: 8.20 },
+  ]);
+  await seedProduct(sugar.id, 'סוכר חום 500 גרם', 'סוגת', { type: 'חום', weight: '500 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'סוגת סוכר חום דמררה 500 גרם', price: 12.90 },
+    { supermarketId: yochananof.id, externalName: 'סוכר חום סוגת 500 גרם', price: 11.90 },
+    { supermarketId: ramiLevy.id, externalName: 'סוגת סוכר חום 500 גרם', price: 13.50 },
+  ]);
+
+  // ── חטיפים ──
+  await seedProduct(snacks.id, 'במבה 100 גרם', 'אוסם', { type: 'במבה', weight: '100 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'אוסם במבה 100 גרם', price: 7.90 },
+    { supermarketId: yochananof.id, externalName: 'במבה אוסם 100 גרם', price: 7.50 },
+    { supermarketId: ramiLevy.id, externalName: 'אוסם במבה אריזה גדולה 100 גרם', price: 8.50 },
+  ]);
+  await seedProduct(snacks.id, 'ביסלי גריל 200 גרם', 'אוסם', { type: 'ביסלי', weight: '200 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'אוסם ביסלי גריל 200 גרם', price: 9.90 },
+    { supermarketId: yochananof.id, externalName: 'ביסלי גריל אוסם 200 גרם', price: 9.50 },
+    { supermarketId: ramiLevy.id, externalName: 'אוסם ביסלי גריל מרקיזה 200 גרם', price: 10.50 },
+  ]);
+  await seedProduct(snacks.id, 'צ׳יפס 50 גרם', 'תפוצ׳יפס', { type: 'צ׳יפס', weight: '50 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'תפוצ׳יפס 50 גרם', price: 5.90 },
+    { supermarketId: yochananof.id, externalName: 'צ׳יפס תפוצ׳יפס 50 גרם', price: 5.50 },
+    { supermarketId: ramiLevy.id, externalName: 'תפוצ׳יפס קלאסי 50 גרם', price: 6.20 },
+  ]);
+
+  // ── שתייה ──
+  await seedProduct(beverages.id, 'מים מינרלים 1.5 ליטר', 'נביעות', { type: 'מים', volume: '1.5 ליטר' }, [
+    { supermarketId: shufersal.id, externalName: 'נביעות מים מינרלים 1.5 ליטר', price: 4.90 },
+    { supermarketId: yochananof.id, externalName: 'מים נביעות 1.5 ליטר', price: 4.50 },
+    { supermarketId: ramiLevy.id, externalName: 'נביעות מים 1.5 ליטר', price: 5.20 },
+  ]);
+  await seedProduct(beverages.id, 'מיץ תפוזים 1 ליטר', 'פריגת', { type: 'מיץ', volume: '1 ליטר' }, [
+    { supermarketId: shufersal.id, externalName: 'פריגת מיץ תפוזים 1 ליטר', price: 10.90 },
+    { supermarketId: yochananof.id, externalName: 'מיץ תפוזים פריגת 1 ליטר', price: 9.90 },
+    { supermarketId: ramiLevy.id, externalName: 'פריגת תפוזים 100% 1 ליטר', price: 11.50 },
+  ]);
+  await seedProduct(beverages.id, 'בירה גולדסטאר 500 מ״ל', 'גולדסטאר', { type: 'בירה', volume: '500 מ״ל' }, [
+    { supermarketId: shufersal.id, externalName: 'גולדסטאר בירה 500 מ״ל', price: 8.90 },
+    { supermarketId: yochananof.id, externalName: 'בירה גולדסטאר 500 מ״ל', price: 7.90 },
+    { supermarketId: ramiLevy.id, externalName: 'גולדסטאר 500 מ״ל', price: 9.50 },
+  ]);
+
+  // ── ניקיון ──
+  await seedProduct(cleaning.id, 'סבון כלים 750 מ״ל', 'פיירי', { type: 'כלים', volume: '500 מ״ל' }, [
+    { supermarketId: shufersal.id, externalName: 'פיירי סבון כלים 750 מ״ל', price: 12.90 },
+    { supermarketId: yochananof.id, externalName: 'סבון כלים פיירי 750 מ״ל', price: 11.90 },
+    { supermarketId: ramiLevy.id, externalName: 'פיירי נוזל כלים 750 מ״ל', price: 13.50 },
+  ]);
+  await seedProduct(cleaning.id, 'נוזל כביסה 2 ליטר', 'סנו', { type: 'כביסה', volume: '2 ליטר' }, [
+    { supermarketId: shufersal.id, externalName: 'סנו נוזל כביסה 2 ליטר', price: 29.90 },
+    { supermarketId: yochananof.id, externalName: 'נוזל כביסה סנו 2 ליטר', price: 27.90 },
+    { supermarketId: ramiLevy.id, externalName: 'סנו מקסימה נוזל כביסה 2 ליטר', price: 31.90 },
+  ]);
+
+  // ── קפואים ──
+  await seedProduct(frozen.id, 'ירקות קפואים 400 גרם', null, { type: 'ירקות', weight: '400 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'ירקות קפואים מעורב 400 גרם', price: 9.90 },
+    { supermarketId: yochananof.id, externalName: 'ירקות קפואים 400 גרם', price: 8.90 },
+    { supermarketId: ramiLevy.id, externalName: 'ירקות מעורב קפואים 400 גרם', price: 10.50 },
+  ]);
+  await seedProduct(frozen.id, 'פיצה קפואה 500 גרם', null, { type: 'פיצה', weight: '500 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'פיצה קפואה 500 גרם', price: 19.90 },
+    { supermarketId: yochananof.id, externalName: 'פיצה משפחתית קפואה 500 גרם', price: 18.90 },
+    { supermarketId: ramiLevy.id, externalName: 'פיצה קפואה גדולה 500 גרם', price: 21.90 },
+  ]);
+  await seedProduct(frozen.id, 'בורקס גבינה 500 גרם', null, { type: 'בורקס', weight: '500 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'בורקס גבינה קפוא 500 גרם', price: 22.90 },
+    { supermarketId: yochananof.id, externalName: 'בורקס גבינה 500 גרם', price: 21.90 },
+    { supermarketId: ramiLevy.id, externalName: 'בורקס גבינה בולגרית 500 גרם', price: 24.90 },
+  ]);
+
+  // ── גבינות ──
+  await seedProduct(cheese.id, 'גבינה צהובה 200 גרם', 'תנובה', { type: 'צהובה', weight: '200 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'תנובה גבינה צהובה עמק 200 גרם', price: 18.90 },
+    { supermarketId: yochananof.id, externalName: 'גבינה צהובה עמק תנובה 200 גרם', price: 17.90 },
+    { supermarketId: ramiLevy.id, externalName: 'תנובה עמק צהובה 200 גרם', price: 19.90 },
+  ]);
+  await seedProduct(cheese.id, 'גבינה בולגרית 5% 250 גרם', 'תנובה', { type: 'בולגרית', weight: '250 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'תנובה גבינה בולגרית 5% 250 גרם', price: 9.90 },
+    { supermarketId: yochananof.id, externalName: 'גבינה בולגרית תנובה 5% 250 גרם', price: 9.50 },
+    { supermarketId: ramiLevy.id, externalName: 'תנובה בולגרית 5% 250 גרם', price: 10.50 },
+  ]);
+  await seedProduct(cheese.id, 'מוצרלה 200 גרם', 'גד', { type: 'מוצרלה', weight: '200 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'גד מוצרלה 200 גרם', price: 14.90 },
+    { supermarketId: yochananof.id, externalName: 'מוצרלה גד 200 גרם', price: 13.90 },
+    { supermarketId: ramiLevy.id, externalName: 'גד מוצרלה טרייה 200 גרם', price: 15.90 },
+  ]);
+
   // ── Demo Basket ──
   const demoBasket = await prisma.basket.create({
     data: {
@@ -401,7 +570,7 @@ async function main() {
   });
 
   console.log(`✓ בסיס הנתונים נוצר בהצלחה`);
-  console.log(`  - 12 קטגוריות מוצרים`);
+  console.log(`  - 20 קטגוריות מוצרים`);
   console.log(`  - 30 מוצרים קנוניים`);
   console.log(`  - 3 סופרמרקטים ישראליים עם מקורות נתונים`);
   console.log(`  - ~80 מוצרים בסופרמרקטים עם תמונות מחיר`);

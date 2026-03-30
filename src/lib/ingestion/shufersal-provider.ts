@@ -61,6 +61,11 @@ const BRAND_MAP: Record<string, string> = {
   'עוף טוב': 'עוף טוב',
   'של-י': 'שלי',
   'שלי': 'שלי',
+  'עלית': 'עלית',
+  'גולדסטאר': 'גולדסטאר',
+  'מקבי': 'מקבי',
+  'נביעות': 'נביעות',
+  'מי עדן': 'מי עדן',
 };
 
 function normalizeBrand(manufacturerName: string, itemName: string): string | null {
@@ -503,7 +508,315 @@ const CATEGORY_MATCHERS: CategoryMatcher[] = [
       return attrs;
     },
   },
+  {
+    categorySlug: 'coffee',
+    patterns: [/קפה/, /קפסולות/],
+    excludePatterns: [/קפה קר/, /קפה מוכן/, /קרם קפה/],
+    extractAttributes: (item: ShufersalItem) => {
+      const name = item.ItemName;
+      const attrs: Record<string, string> = {};
+
+      // Type
+      if (/קפסולות|קפסולה|נספרסו/.test(name)) {
+        attrs.type = 'קפסולות';
+      } else if (/טורקי/.test(name)) {
+        attrs.type = 'טורקי';
+      } else if (/נמס|גולד/.test(name)) {
+        attrs.type = 'נמס';
+      } else if (/פולים/.test(name)) {
+        attrs.type = 'פולים';
+      } else {
+        attrs.type = 'נמס';
+      }
+
+      // Weight
+      const weightG = name.match(/(\d+)\s*ג/);
+      if (weightG) {
+        const grams = parseInt(weightG[1]);
+        if (grams <= 100) attrs.weight = '100 גרם';
+        else if (grams <= 200) attrs.weight = '200 גרם';
+        else attrs.weight = '500 גרם';
+      }
+
+      return attrs;
+    },
+  },
+  {
+    categorySlug: 'oil',
+    patterns: [/שמן/],
+    excludePatterns: [/שמנת/, /שמן דגים/, /שמן גוף/, /שמן שיער/, /שמן תינוק/],
+    extractAttributes: (item: ShufersalItem) => {
+      const name = item.ItemName;
+      const attrs: Record<string, string> = {};
+
+      // Type
+      if (/זית/.test(name)) {
+        attrs.type = 'זית';
+      } else if (/קנולה/.test(name)) {
+        attrs.type = 'קנולה';
+      } else if (/חמניות/.test(name)) {
+        attrs.type = 'חמניות';
+      } else {
+        attrs.type = 'צמחי';
+      }
+
+      // Volume
+      const volumeMl = name.match(/(\d+)\s*מ[״"']?ל/);
+      const volumeL = name.match(/(\d+\.?\d*)\s*ל[יטר']*/) || name.match(/(\d+\.?\d*)\s*ל$/);
+      if (volumeMl) {
+        const ml = parseInt(volumeMl[1]);
+        if (ml <= 500) attrs.volume = '500 מ״ל';
+        else if (ml <= 750) attrs.volume = '750 מ״ל';
+        else attrs.volume = '1 ליטר';
+      } else if (volumeL) {
+        const l = parseFloat(volumeL[1]);
+        if (l <= 0.75) attrs.volume = '750 מ״ל';
+        else attrs.volume = '1 ליטר';
+      }
+
+      return attrs;
+    },
+  },
+  {
+    categorySlug: 'sugar',
+    patterns: [/סוכר/],
+    excludePatterns: [/סוכריות/, /סוכרייה/],
+    extractAttributes: (item: ShufersalItem) => {
+      const name = item.ItemName;
+      const attrs: Record<string, string> = {};
+
+      // Type
+      if (/חום|דמררה/.test(name)) {
+        attrs.type = 'חום';
+      } else if (/סוכרזית|ממתיק/.test(name)) {
+        attrs.type = 'סוכרזית';
+      } else {
+        attrs.type = 'לבן';
+      }
+
+      // Weight
+      const weightKg = name.match(/(\d+\.?\d*)\s*ק/);
+      const weightG = name.match(/(\d+)\s*ג/);
+      if (weightKg) {
+        attrs.weight = '1 ק״ג';
+      } else if (weightG) {
+        const grams = parseInt(weightG[1]);
+        if (grams <= 500) attrs.weight = '500 גרם';
+        else attrs.weight = '1 ק״ג';
+      }
+
+      return attrs;
+    },
+  },
+  {
+    categorySlug: 'snacks',
+    patterns: [/במבה|ביסלי|צ'?יפס|פופקורן|חטיף/],
+    excludePatterns: [/חטיף חלבון/, /חטיף בריאות/],
+    extractAttributes: (item: ShufersalItem) => {
+      const name = item.ItemName;
+      const attrs: Record<string, string> = {};
+
+      // Type
+      if (/במבה/.test(name)) {
+        attrs.type = 'במבה';
+      } else if (/ביסלי/.test(name)) {
+        attrs.type = 'ביסלי';
+      } else if (/צ'?יפס|תפוצ'?יפס/.test(name)) {
+        attrs.type = 'צ׳יפס';
+      } else if (/פופקורן/.test(name)) {
+        attrs.type = 'פופקורן';
+      } else {
+        attrs.type = 'אחר';
+      }
+
+      // Weight
+      const weightG = name.match(/(\d+)\s*ג/);
+      if (weightG) {
+        const grams = parseInt(weightG[1]);
+        if (grams <= 50) attrs.weight = '50 גרם';
+        else if (grams <= 100) attrs.weight = '100 גרם';
+        else attrs.weight = '200 גרם';
+      }
+
+      return attrs;
+    },
+  },
+  {
+    categorySlug: 'beverages',
+    patterns: [/מים מינרל|מיץ|סודה|קולה|בירה|שתייה|מים \d/],
+    excludePatterns: [/מי ורדים/, /מי סבון/, /סודה לשתייה/],
+    extractAttributes: (item: ShufersalItem) => {
+      const name = item.ItemName;
+      const attrs: Record<string, string> = {};
+
+      // Type
+      if (/מים/.test(name)) {
+        attrs.type = 'מים';
+      } else if (/מיץ/.test(name)) {
+        attrs.type = 'מיץ';
+      } else if (/סודה|קולה|ספרייט|פנטה/.test(name)) {
+        attrs.type = 'סודה';
+      } else if (/בירה|גולדסטאר|מקבי|קרלסברג|הייניקן/.test(name)) {
+        attrs.type = 'בירה';
+      } else {
+        attrs.type = 'מיץ';
+      }
+
+      // Volume
+      const volumeMl = name.match(/(\d+)\s*מ[״"']?ל/);
+      const volumeL = name.match(/(\d+\.?\d*)\s*ל[יטר']*/) || name.match(/(\d+\.?\d*)\s*ל$/);
+      if (volumeMl) {
+        const ml = parseInt(volumeMl[1]);
+        if (ml <= 500) attrs.volume = '500 מ״ל';
+        else if (ml <= 1000) attrs.volume = '1 ליטר';
+        else if (ml <= 1500) attrs.volume = '1.5 ליטר';
+        else attrs.volume = '2 ליטר';
+      } else if (volumeL) {
+        const l = parseFloat(volumeL[1]);
+        if (l <= 0.5) attrs.volume = '500 מ״ל';
+        else if (l <= 1) attrs.volume = '1 ליטר';
+        else if (l <= 1.5) attrs.volume = '1.5 ליטר';
+        else attrs.volume = '2 ליטר';
+      }
+
+      return attrs;
+    },
+  },
+  {
+    categorySlug: 'cleaning',
+    patterns: [/סבון כלים|נוזל כלים|אבקת כביסה|נוזל כביסה|מנקה רצפ|מנקה אסלה|אקונומיקה|מרכך כביסה/],
+    excludePatterns: [/סבון ידיים/, /סבון גוף/, /שמפו/],
+    extractAttributes: (item: ShufersalItem) => {
+      const name = item.ItemName;
+      const attrs: Record<string, string> = {};
+
+      // Type
+      if (/כלים/.test(name)) {
+        attrs.type = 'כלים';
+      } else if (/כביסה/.test(name)) {
+        attrs.type = 'כביסה';
+      } else if (/רצפ/.test(name)) {
+        attrs.type = 'רצפה';
+      } else if (/אסלה|שירותים/.test(name)) {
+        attrs.type = 'אסלה';
+      } else {
+        attrs.type = 'כללי';
+      }
+
+      // Volume
+      const volumeMl = name.match(/(\d+)\s*מ[״"']?ל/);
+      const volumeL = name.match(/(\d+\.?\d*)\s*ל[יטר']*/) || name.match(/(\d+\.?\d*)\s*ל$/);
+      if (volumeMl) {
+        const ml = parseInt(volumeMl[1]);
+        if (ml <= 500) attrs.volume = '500 מ״ל';
+        else if (ml <= 1000) attrs.volume = '1 ליטר';
+        else attrs.volume = '2 ליטר';
+      } else if (volumeL) {
+        const l = parseFloat(volumeL[1]);
+        if (l <= 1) attrs.volume = '1 ליטר';
+        else attrs.volume = '2 ליטר';
+      }
+
+      return attrs;
+    },
+  },
+  {
+    categorySlug: 'frozen',
+    patterns: [/קפוא|קפואה|קפואים|קפואות/],
+    excludePatterns: [/ירקות קפואים.*תבלין/],
+    extractAttributes: (item: ShufersalItem) => {
+      const name = item.ItemName;
+      const attrs: Record<string, string> = {};
+
+      // Type
+      if (/ירקות/.test(name)) {
+        attrs.type = 'ירקות';
+      } else if (/פיצה/.test(name)) {
+        attrs.type = 'פיצה';
+      } else if (/בורקס/.test(name)) {
+        attrs.type = 'בורקס';
+      } else if (/שניצל/.test(name)) {
+        attrs.type = 'שניצל';
+      } else if (/גלידה/.test(name)) {
+        attrs.type = 'גלידה';
+      } else {
+        attrs.type = 'ירקות';
+      }
+
+      // Weight
+      const weightG = name.match(/(\d+)\s*ג/);
+      const weightKg = name.match(/(\d+\.?\d*)\s*ק/);
+      if (weightG) {
+        const grams = parseInt(weightG[1]);
+        if (grams <= 400) attrs.weight = '400 גרם';
+        else if (grams <= 500) attrs.weight = '500 גרם';
+        else attrs.weight = '1 ק״ג';
+      } else if (weightKg) {
+        attrs.weight = '1 ק״ג';
+      }
+
+      return attrs;
+    },
+  },
+  {
+    categorySlug: 'cheese',
+    patterns: [/גבינ/],
+    excludePatterns: [/קוטג/, /שמנת/, /גבינת שמנת/],
+    extractAttributes: (item: ShufersalItem) => {
+      const name = item.ItemName;
+      const attrs: Record<string, string> = {};
+
+      // Type
+      if (/צהובה|עמק|גאודה|אדם|צ'דר/.test(name)) {
+        attrs.type = 'צהובה';
+      } else if (/בולגרית/.test(name)) {
+        attrs.type = 'בולגרית';
+      } else if (/מוצרלה/.test(name)) {
+        attrs.type = 'מוצרלה';
+      } else if (/שמנת/.test(name)) {
+        attrs.type = 'שמנת';
+      } else if (/לבנה/.test(name)) {
+        attrs.type = 'לבנה';
+      } else {
+        attrs.type = 'לבנה';
+      }
+
+      // Weight
+      const weightG = name.match(/(\d+)\s*ג/);
+      if (weightG) {
+        const grams = parseInt(weightG[1]);
+        if (grams <= 200) attrs.weight = '200 גרם';
+        else if (grams <= 250) attrs.weight = '250 גרם';
+        else attrs.weight = '500 גרם';
+      }
+
+      return attrs;
+    },
+  },
 ];
+
+// ── Product Name Cleanup ──
+
+function cleanProductName(name: string): string {
+  let cleaned = name;
+
+  // Normalize multiple spaces to single space
+  cleaned = cleaned.replace(/\s{2,}/g, ' ');
+
+  // Clean up common abbreviations
+  cleaned = cleaned.replace(/\bגר\b/g, 'גרם');
+  cleaned = cleaned.replace(/מ\\"ל/g, 'מ"ל');
+  cleaned = cleaned.replace(/ק\\"ג/g, 'ק"ג');
+
+  // Remove trailing standalone unit patterns like "250ג" when they appear at the end
+  // These are raw weight suffixes already captured in attributes
+  cleaned = cleaned.replace(/\s+\d+ג$/g, '');
+
+  // Trim whitespace
+  cleaned = cleaned.trim();
+
+  return cleaned;
+}
 
 // ── XML Parser ──
 
@@ -695,12 +1008,14 @@ export class ShufersalProvider implements IngestionProvider {
           },
         });
 
+        const cleanedName = cleanProductName(item.ItemName);
+
         if (supermarketProduct) {
           // Update existing product
           await prisma.supermarketProduct.update({
             where: { id: supermarketProduct.id },
             data: {
-              externalName: item.ItemName,
+              externalName: cleanedName,
               brand: match.brand,
               price,
               inStock,
@@ -725,7 +1040,7 @@ export class ShufersalProvider implements IngestionProvider {
             data: {
               supermarketId,
               canonicalProductId: canonicalProduct.id,
-              externalName: item.ItemName,
+              externalName: cleanedName,
               brand: match.brand,
               price,
               inStock,
@@ -859,6 +1174,14 @@ function buildCanonicalName(
     'chicken-breast': 'חזה עוף',
     'tuna': 'טונה',
     'cereal': 'דגני בוקר',
+    'coffee': 'קפה',
+    'oil': 'שמן',
+    'sugar': 'סוכר',
+    'snacks': 'חטיפים',
+    'beverages': 'שתייה',
+    'cleaning': 'ניקיון',
+    'frozen': 'קפואים',
+    'cheese': 'גבינות',
   };
 
   const parts: string[] = [];

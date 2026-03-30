@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, AlertTriangle, RefreshCw, Tag, Check, X as XIcon, Clock } from 'lucide-react';
+import { ArrowRight, AlertTriangle, RefreshCw, Tag, Check, X as XIcon, Clock } from 'lucide-react';
 import { compareBasketAction } from '@/lib/actions';
 import { formatPrice, formatTimeAgo } from '@/lib/utils';
 import type { ComparisonResult, SupermarketComparison, ItemResolution } from '@/types';
@@ -73,7 +73,7 @@ function BreakdownPageInner() {
         href={`/compare?basketId=${basketId}`}
         className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6"
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowRight className="h-4 w-4" />
         חזרה להשוואה
       </Link>
 

@@ -180,7 +180,7 @@ function OptimizePageInner() {
                     <p className="mt-0.5 text-xs text-brand-600">{item.changeReason}</p>
                   )}
                 </div>
-                <div className="text-right ml-4 shrink-0">
+                <div className="text-right mr-4 shrink-0">
                   {item.changed ? (
                     <>
                       <p className="text-sm font-semibold text-gray-900">
@@ -281,7 +281,7 @@ function RecommendationCard({ recommendation }: { recommendation: Recommendation
           <p className="mt-0.5 text-sm opacity-80">{recommendation.description}</p>
         </div>
         {recommendation.impact.savingsAmount > 0 && (
-          <div className="ml-4 shrink-0 text-right">
+          <div className="mr-4 shrink-0 text-right">
             <p className="text-lg font-bold">-{formatPrice(recommendation.impact.savingsAmount)}</p>
             <p className="text-xs opacity-70">{recommendation.impact.percentage}% הנחה</p>
           </div>

@@ -70,4 +70,8 @@
   .badge-best {
     @apply badge bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-600/20;
   }
+
+  .supermarket-shufersal { border-right: 4px solid #e31e24; } /* Shufersal red */
+  .supermarket-rami-levy { border-right: 4px solid #003da5; } /* Rami Levy blue */
+  .supermarket-yochananof { border-right: 4px solid #00a651; } /* Yochananof green */
 }
