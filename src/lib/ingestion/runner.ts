@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db/client';
 import { createLogger } from '@/lib/logger';
 import { MockIngestionProvider } from './mock-provider';
+import { ShufersalProvider } from './shufersal-provider';
 import type { IngestionProvider, IngestionRunSummary, IngestionResult } from './types';
 
 const log = createLogger('ingestion:runner');
@@ -12,8 +13,8 @@ function getProvider(type: string): IngestionProvider {
   switch (type) {
     case 'mock':
       return new MockIngestionProvider();
-    // Future: case 'scraper': return new ScraperProvider();
-    // Future: case 'api': return new ApiProvider();
+    case 'shufersal-file':
+      return new ShufersalProvider();
     default:
       throw new Error(`Unknown data source type: ${type}`);
   }
