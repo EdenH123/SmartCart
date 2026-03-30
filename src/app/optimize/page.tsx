@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Sparkles,
-  ArrowLeft,
   AlertTriangle,
   RefreshCw,
   TrendingDown,
@@ -106,7 +105,7 @@ function OptimizePageInner() {
         href="/basket"
         className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6"
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowRight className="h-4 w-4" />
         חזרה לסל
       </Link>
 
@@ -180,7 +179,7 @@ function OptimizePageInner() {
                     <p className="mt-0.5 text-xs text-brand-600">{item.changeReason}</p>
                   )}
                 </div>
-                <div className="text-right mr-4 shrink-0">
+                <div className="text-right ml-4 shrink-0">
                   {item.changed ? (
                     <>
                       <p className="text-sm font-semibold text-gray-900">

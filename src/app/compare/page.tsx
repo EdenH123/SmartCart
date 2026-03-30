@@ -181,13 +181,13 @@ function SupermarketCard({
         <div className="mt-4 flex flex-wrap gap-2">
           {comparison.unavailableCount > 0 && (
             <span className="badge-unavailable">
-              <AlertTriangle className="ml-1 h-3 w-3" />
+              <AlertTriangle className="mr-1 h-3 w-3" />
               {comparison.unavailableCount} לא זמין
             </span>
           )}
           {comparison.substitutionCount > 0 && (
             <span className="badge-substituted">
-              <RefreshCw className="ml-1 h-3 w-3" />
+              <RefreshCw className="mr-1 h-3 w-3" />
               {comparison.substitutionCount} תחליפים
             </span>
           )}
@@ -217,7 +217,7 @@ function SupermarketCard({
                     <span className="badge-unavailable text-[10px]">חסר</span>
                   )}
                 </div>
-                <span className="text-gray-900 font-medium mr-2 whitespace-nowrap">
+                <span className="text-gray-900 font-medium ml-2 whitespace-nowrap">
                   {item.totalPrice != null
                     ? `${formatPrice(item.totalPrice)}${item.quantity > 1 ? ` (x${item.quantity})` : ''}`
                     : '\u2014'}
