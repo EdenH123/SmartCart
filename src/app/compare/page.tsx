@@ -10,16 +10,36 @@ import type { ComparisonResult, SupermarketComparison } from '@/types';
 
 export default function ComparePage() {
   return (
-    <Suspense fallback={
-      <div className="mx-auto max-w-4xl px-4 py-16 text-center">
-        <div className="animate-pulse">
-          <div className="mx-auto h-12 w-12 rounded-full bg-gray-200" />
-          <div className="mx-auto mt-4 h-6 w-48 rounded bg-gray-200" />
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<CompareSkeleton />}>
       <ComparePageInner />
     </Suspense>
+  );
+}
+
+function CompareSkeleton() {
+  return (
+    <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 animate-pulse">
+      <div className="h-4 w-20 rounded bg-gray-200 mb-6" />
+      <div className="h-7 w-40 rounded bg-gray-200" />
+      <div className="mt-4 h-16 w-full rounded-lg bg-gray-100" />
+      <div className="mt-6 space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="card p-5">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-gray-200" />
+                <div className="h-5 w-32 rounded bg-gray-200" />
+              </div>
+              <div className="h-8 w-20 rounded bg-gray-200" />
+            </div>
+            <div className="mt-4 flex gap-2">
+              <div className="h-5 w-20 rounded-full bg-gray-200" />
+              <div className="h-5 w-24 rounded-full bg-gray-200" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -181,13 +201,13 @@ function SupermarketCard({
         <div className="mt-4 flex flex-wrap gap-2">
           {comparison.unavailableCount > 0 && (
             <span className="badge-unavailable">
-              <AlertTriangle className="mr-1 h-3 w-3" />
+              <AlertTriangle className="h-3 w-3" />
               {comparison.unavailableCount} לא זמין
             </span>
           )}
           {comparison.substitutionCount > 0 && (
             <span className="badge-substituted">
-              <RefreshCw className="mr-1 h-3 w-3" />
+              <RefreshCw className="h-3 w-3" />
               {comparison.substitutionCount} תחליפים
             </span>
           )}

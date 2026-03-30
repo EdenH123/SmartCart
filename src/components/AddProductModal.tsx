@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { X, Search, ChevronRight, ShoppingCart } from 'lucide-react';
+import { X, Search, ChevronRight, ShoppingCart, Loader2 } from 'lucide-react';
 import { searchCategoriesAction, searchProductsAction } from '@/lib/actions';
 import type { CategoryWithAttributes, MatchMode, UserConstraints, BasketItemInput, ProductSearchResult } from '@/types';
 
@@ -40,6 +40,16 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
   useEffect(() => {
     if (open) reset();
   }, [open, reset]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
 
   // Search categories
   useEffect(() => {
@@ -291,7 +301,10 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
               </div>
 
               {loading && (
-                <p className="text-xs text-gray-400">מחפש מוצרים מתאימים...</p>
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  מחפש מוצרים מתאימים...
+                </div>
               )}
               {!loading && matchingProducts.length > 0 && (
                 <p className="text-xs text-gray-500">
@@ -331,7 +344,7 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
                   <p className="mt-1 text-sm text-gray-500">{selectedCategory.name}</p>
                 </div>
                 <span className={matchMode === 'exact' ? 'badge-exact' : 'badge-flexible'}>
-                  {matchMode}
+                  {matchMode === 'exact' ? 'מדויק' : 'גמיש'}
                 </span>
               </div>
 

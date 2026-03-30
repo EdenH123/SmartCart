@@ -1,5 +1,6 @@
 'use server';
 
+import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db/client';
 import { searchCategories, searchProducts, getAllCategories, getCategory } from '@/lib/products/search';
 import { compareBasket } from '@/lib/comparison/engine';
@@ -44,13 +45,31 @@ export async function searchProductsAction(
 
 // ── Basket Actions ──
 
+const BASKET_COOKIE = 'smartcart-basket-id';
+const BASKET_COOKIE_MAX_AGE = 60 * 60 * 24 * 90; // 90 days
+
 export async function getOrCreateBasket(): Promise<string> {
-  const existing = await prisma.basket.findFirst({
+  const cookieStore = await cookies();
+  const savedId = cookieStore.get(BASKET_COOKIE)?.value;
+
+  // Try to use the cookie-saved basket
+  if (savedId) {
+    const existing = await prisma.basket.findUnique({ where: { id: savedId } });
+    if (existing) return existing.id;
+  }
+
+  // Fall back to most recent basket
+  const recent = await prisma.basket.findFirst({
     orderBy: { updatedAt: 'desc' },
   });
-  if (existing) return existing.id;
+  if (recent) {
+    cookieStore.set(BASKET_COOKIE, recent.id, { maxAge: BASKET_COOKIE_MAX_AGE, path: '/' });
+    return recent.id;
+  }
 
+  // Create new basket
   const basket = await prisma.basket.create({ data: {} });
+  cookieStore.set(BASKET_COOKIE, basket.id, { maxAge: BASKET_COOKIE_MAX_AGE, path: '/' });
   return basket.id;
 }
 
@@ -128,7 +147,11 @@ export async function loadDemoBasket(): Promise<string> {
     orderBy: { createdAt: 'asc' },
   });
 
-  if (demoBasket) return demoBasket.id;
+  if (demoBasket) {
+    const cookieStore = await cookies();
+    cookieStore.set(BASKET_COOKIE, demoBasket.id, { maxAge: BASKET_COOKIE_MAX_AGE, path: '/' });
+    return demoBasket.id;
+  }
 
   const categories = await prisma.productCategory.findMany();
   const catMap = new Map(categories.map((c) => [c.slug, c.id]));
@@ -163,6 +186,8 @@ export async function loadDemoBasket(): Promise<string> {
     },
   });
 
+  const cookieStore = await cookies();
+  cookieStore.set(BASKET_COOKIE, basket.id, { maxAge: BASKET_COOKIE_MAX_AGE, path: '/' });
   return basket.id;
 }
 

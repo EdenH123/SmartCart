@@ -75,3 +75,18 @@
   .supermarket-rami-levy { border-right: 4px solid #003da5; } /* Rami Levy blue */
   .supermarket-yochananof { border-right: 4px solid #00a651; } /* Yochananof green */
 }
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.25s ease-out;
+}

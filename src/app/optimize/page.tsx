@@ -20,10 +20,21 @@ export default function OptimizePage() {
   return (
     <Suspense
       fallback={
-        <div className="mx-auto max-w-4xl px-4 py-16 text-center">
-          <div className="animate-pulse">
-            <div className="mx-auto h-12 w-12 rounded-full bg-gray-200" />
-            <div className="mx-auto mt-4 h-6 w-48 rounded bg-gray-200" />
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 animate-pulse">
+          <div className="h-4 w-20 rounded bg-gray-200 mb-6" />
+          <div className="rounded-xl bg-brand-50 p-6 text-center">
+            <div className="mx-auto h-12 w-12 rounded-full bg-brand-100" />
+            <div className="mx-auto mt-3 h-5 w-40 rounded bg-brand-100" />
+          </div>
+          <div className="mt-6 space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="card p-4">
+                <div className="flex items-center justify-between">
+                  <div className="h-5 w-36 rounded bg-gray-200" />
+                  <div className="h-5 w-16 rounded bg-gray-200" />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       }

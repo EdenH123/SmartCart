@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Trash2, ShoppingCart, ArrowRight, Scale, Minus, Sparkles } from 'lucide-react';
+import { Plus, Trash2, ShoppingCart, ArrowRight, Scale, Minus, Sparkles, Loader2 } from 'lucide-react';
 import {
   getOrCreateBasket,
   getBasketItems,
@@ -14,6 +14,7 @@ import {
   quickAddToBasket,
   getItemPriceRanges,
 } from '@/lib/actions';
+import { useToast } from '@/components/Toast';
 import AddProductModal from '@/components/AddProductModal';
 import type { BasketItemDTO, BasketItemInput } from '@/types';
 
@@ -28,33 +29,56 @@ const POPULAR_ITEMS: { label: string; categorySlug: string; constraints: Record<
 
 export default function BasketPage() {
   return (
-    <Suspense fallback={
-      <div className="mx-auto max-w-3xl px-4 py-16 text-center">
-        <div className="animate-pulse">
-          <div className="mx-auto h-8 w-48 rounded bg-gray-200" />
-          <div className="mx-auto mt-4 h-4 w-64 rounded bg-gray-200" />
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<BasketSkeleton />}>
       <BasketPageInner />
     </Suspense>
+  );
+}
+
+function BasketSkeleton() {
+  return (
+    <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8 animate-pulse">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="h-7 w-28 rounded bg-gray-200" />
+          <div className="mt-2 h-4 w-20 rounded bg-gray-200" />
+        </div>
+        <div className="h-10 w-28 rounded-lg bg-gray-200" />
+      </div>
+      <div className="mt-6 space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="card p-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <div className="h-5 w-40 rounded bg-gray-200" />
+                <div className="mt-2 h-3 w-24 rounded bg-gray-200" />
+              </div>
+              <div className="h-8 w-24 rounded bg-gray-200" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-8 h-12 w-full rounded-lg bg-gray-200" />
+    </div>
   );
 }
 
 function BasketPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { showToast } = useToast();
   const [basketId, setBasketId] = useState<string | null>(null);
   const [items, setItems] = useState<BasketItemDTO[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false); // for button operations
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const [priceRanges, setPriceRanges] = useState<Record<string, { min: number; max: number; count: number } | null>>({});
 
   const loadBasket = useCallback(async (id: string) => {
     const basketItems = await getBasketItems(id);
     setItems(basketItems);
     setLoading(false);
-    // Load price ranges in parallel
     if (basketItems.length > 0) {
       const ranges = await getItemPriceRanges(id);
       setPriceRanges(ranges);
@@ -65,42 +89,74 @@ function BasketPageInner() {
 
   useEffect(() => {
     async function init() {
-      const demo = searchParams.get('demo');
-      let id: string;
-      if (demo === 'true') {
-        id = await loadDemoBasket();
-        // Clear the query param
-        router.replace('/basket');
-      } else {
-        id = await getOrCreateBasket();
+      try {
+        const demo = searchParams.get('demo');
+        let id: string;
+        if (demo === 'true') {
+          id = await loadDemoBasket();
+          router.replace('/basket');
+        } else {
+          id = await getOrCreateBasket();
+        }
+        setBasketId(id);
+        await loadBasket(id);
+      } catch {
+        setLoading(false);
+        showToast('error', 'שגיאה בטעינת הסל');
       }
-      setBasketId(id);
-      await loadBasket(id);
     }
     init();
-  }, [searchParams, router, loadBasket]);
+  }, [searchParams, router, loadBasket, showToast]);
 
   const handleAdd = async (input: BasketItemInput) => {
     if (!basketId) return;
-    await addBasketItem(basketId, input);
-    await loadBasket(basketId);
+    try {
+      setBusy(true);
+      await addBasketItem(basketId, input);
+      await loadBasket(basketId);
+      showToast('success', 'המוצר נוסף לסל');
+    } catch {
+      showToast('error', 'שגיאה בהוספת המוצר');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleRemove = async (itemId: string) => {
-    await removeBasketItem(itemId);
-    if (basketId) await loadBasket(basketId);
+    try {
+      setRemovingId(itemId);
+      await removeBasketItem(itemId);
+      if (basketId) await loadBasket(basketId);
+      showToast('info', 'המוצר הוסר מהסל');
+    } catch {
+      showToast('error', 'שגיאה בהסרת המוצר');
+    } finally {
+      setRemovingId(null);
+    }
   };
 
   const handleQuantityChange = async (itemId: string, newQty: number) => {
     if (newQty < 1) return;
-    await updateBasketItemQuantity(itemId, newQty);
-    if (basketId) await loadBasket(basketId);
+    try {
+      await updateBasketItemQuantity(itemId, newQty);
+      if (basketId) await loadBasket(basketId);
+    } catch {
+      showToast('error', 'שגיאה בעדכון הכמות');
+    }
   };
 
   const handleClear = async () => {
     if (!basketId) return;
-    await clearBasket(basketId);
-    await loadBasket(basketId);
+    try {
+      setBusy(true);
+      await clearBasket(basketId);
+      await loadBasket(basketId);
+      showToast('info', 'הסל נוקה');
+    } catch {
+      showToast('error', 'שגיאה בניקוי הסל');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleCompare = () => {
@@ -115,19 +171,20 @@ function BasketPageInner() {
 
   const handleQuickAdd = async (item: typeof POPULAR_ITEMS[number]) => {
     if (!basketId) return;
-    await quickAddToBasket(basketId, item.categorySlug, item.constraints, item.label);
-    await loadBasket(basketId);
+    try {
+      setBusy(true);
+      await quickAddToBasket(basketId, item.categorySlug, item.constraints, item.label);
+      await loadBasket(basketId);
+      showToast('success', `${item.label} נוסף לסל`);
+    } catch {
+      showToast('error', 'שגיאה בהוספת המוצר');
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (loading) {
-    return (
-      <div className="mx-auto max-w-3xl px-4 py-16 text-center">
-        <div className="animate-pulse">
-          <div className="mx-auto h-8 w-48 rounded bg-gray-200" />
-          <div className="mx-auto mt-4 h-4 w-64 rounded bg-gray-200" />
-        </div>
-      </div>
-    );
+    return <BasketSkeleton />;
   }
 
   return (
@@ -141,11 +198,11 @@ function BasketPageInner() {
         </div>
         <div className="flex gap-2">
           {items.length > 0 && (
-            <button onClick={handleClear} className="btn-ghost text-red-600 hover:bg-red-50 text-xs">
+            <button onClick={handleClear} disabled={busy} className="btn-ghost text-red-600 hover:bg-red-50 text-xs">
               נקה הכל
             </button>
           )}
-          <button onClick={() => setShowAddModal(true)} className="btn-primary gap-1.5">
+          <button onClick={() => setShowAddModal(true)} disabled={busy} className="btn-primary gap-1.5">
             <Plus className="h-4 w-4" />
             הוסף מוצר
           </button>
@@ -169,13 +226,22 @@ function BasketPageInner() {
             </button>
             <button
               onClick={async () => {
-                const id = await loadDemoBasket();
-                setBasketId(id);
-                await loadBasket(id);
+                try {
+                  setBusy(true);
+                  const id = await loadDemoBasket();
+                  setBasketId(id);
+                  await loadBasket(id);
+                  showToast('success', 'סל לדוגמה נטען');
+                } catch {
+                  showToast('error', 'שגיאה בטעינת סל לדוגמה');
+                } finally {
+                  setBusy(false);
+                }
               }}
+              disabled={busy}
               className="btn-secondary"
             >
-              טענו סל לדוגמה
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : 'טענו סל לדוגמה'}
             </button>
           </div>
           <div className="mt-8">
@@ -185,7 +251,8 @@ function BasketPageInner() {
                 <button
                   key={item.categorySlug}
                   onClick={() => handleQuickAdd(item)}
-                  className="inline-flex items-center gap-1 rounded-full bg-gray-100 hover:bg-brand-50 hover:text-brand-700 px-3 py-1.5 text-sm transition-colors"
+                  disabled={busy}
+                  className="inline-flex items-center gap-1 rounded-full bg-gray-100 hover:bg-brand-50 hover:text-brand-700 px-3 py-1.5 text-sm transition-colors disabled:opacity-50"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   {item.label}
@@ -201,8 +268,11 @@ function BasketPageInner() {
         <>
           <div className="mt-6 space-y-3">
             {items.map((item) => (
-              <div key={item.id} className="card p-4">
-                <div className="flex items-start gap-4">
+              <div
+                key={item.id}
+                className={`card p-4 transition-opacity ${removingId === item.id ? 'opacity-50' : ''}`}
+              >
+                <div className="flex items-start gap-3 sm:gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium text-gray-900 truncate">{item.displayName}</p>
@@ -231,26 +301,32 @@ function BasketPageInner() {
                   </div>
 
                   {/* Quantity controls + delete */}
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                     <button
                       onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                      className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                      className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-30"
                       disabled={item.quantity <= 1}
+                      aria-label="הפחת כמות"
                     >
                       <Minus className="h-4 w-4" />
                     </button>
                     <span className="min-w-[1.5rem] text-center text-sm font-medium">{item.quantity}</span>
                     <button
                       onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                      className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                      className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                      aria-label="הוסף כמות"
                     >
                       <Plus className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => handleRemove(item.id)}
-                      className="rounded-md p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                      disabled={removingId === item.id}
+                      className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-30"
+                      aria-label="הסר מהסל"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      {removingId === item.id
+                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                        : <Trash2 className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
@@ -273,13 +349,14 @@ function BasketPageInner() {
 
           {/* Popular items quick-add */}
           <div className="mt-8">
-            <p className="text-sm font-medium text-gray-700 mb-3">פריטים פופולריים</p>
+            <p className="text-sm font-medium text-gray-700 mb-3">הוסיפו במהירות</p>
             <div className="flex flex-wrap gap-2">
               {POPULAR_ITEMS.map((item) => (
                 <button
                   key={item.categorySlug}
                   onClick={() => handleQuickAdd(item)}
-                  className="inline-flex items-center gap-1 rounded-full bg-gray-100 hover:bg-brand-50 hover:text-brand-700 px-3 py-1.5 text-sm transition-colors"
+                  disabled={busy}
+                  className="inline-flex items-center gap-1 rounded-full bg-gray-100 hover:bg-brand-50 hover:text-brand-700 px-3 py-1.5 text-sm transition-colors disabled:opacity-50"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   {item.label}
