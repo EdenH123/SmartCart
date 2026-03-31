@@ -25,6 +25,12 @@ const POPULAR_ITEMS: { label: string; categorySlug: string; constraints: Record<
   { label: 'חזה עוף 1ק"ג', categorySlug: 'chicken-breast', constraints: { type: 'רגיל', weight: '1 ק״ג' } },
   { label: 'קוטג\' 5%', categorySlug: 'cottage-cheese', constraints: { fat: '5%', weight: '250 גרם' } },
   { label: 'אורז 1ק"ג', categorySlug: 'rice', constraints: { type: 'לבן', weight: '1 ק״ג' } },
+  { label: 'חמאה 200ג', categorySlug: 'butter', constraints: { type: 'חמאה', weight: '200 גרם' } },
+  { label: 'טחינה 500ג', categorySlug: 'tehina', constraints: { type: 'גולמית', weight: '500 גרם' } },
+  { label: 'חומוס קלאסי', categorySlug: 'hummus', constraints: { type: 'קלאסי', weight: '400 גרם' } },
+  { label: 'קמח לבן 1ק"ג', categorySlug: 'flour', constraints: { type: 'לבן', weight: '1 ק״ג' } },
+  { label: 'רסק עגבניות', categorySlug: 'canned-tomatoes', constraints: { type: 'רסק', weight: '400 גרם' } },
+  { label: 'בשר טחון 500ג', categorySlug: 'ground-meat', constraints: { type: 'בקר', weight: '500 גרם' } },
 ];
 
 export default function BasketPage() {
@@ -245,7 +251,7 @@ function BasketPageInner() {
             </button>
           </div>
           <div className="mt-8">
-            <p className="text-sm font-medium text-gray-700 mb-3">פריטים פופולריים</p>
+            <h3 className="text-sm font-medium text-gray-700 mb-3">פריטים פופולריים</h3>
             <div className="flex flex-wrap justify-center gap-2">
               {POPULAR_ITEMS.map((item) => (
                 <button
@@ -349,7 +355,7 @@ function BasketPageInner() {
 
           {/* Popular items quick-add */}
           <div className="mt-8">
-            <p className="text-sm font-medium text-gray-700 mb-3">הוסיפו במהירות</p>
+            <h3 className="text-sm font-medium text-gray-700 mb-3">הוסיפו במהירות</h3>
             <div className="flex flex-wrap gap-2">
               {POPULAR_ITEMS.map((item) => (
                 <button

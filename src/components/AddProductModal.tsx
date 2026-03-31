@@ -137,7 +137,7 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 sm:pt-20">
       <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl mx-4">
+      <div role="dialog" aria-modal="true" aria-label="חיפוש והוספת מוצר" className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl mx-4">
         {/* Header */}
         <div className="flex items-center justify-between border-b px-6 py-4">
           <h2 className="text-lg font-semibold text-gray-900">
@@ -159,6 +159,7 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
                 type="text"
                 autoFocus
                 placeholder="חפשו מוצר (למשל: חלב, ביצים, לחם...)"
+                aria-label="חיפוש מוצר"
                 className="w-full rounded-lg border border-gray-300 py-2.5 pr-10 pl-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

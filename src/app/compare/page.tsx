@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Trophy, AlertTriangle, ArrowRight, RefreshCw, TrendingDown, Clock, Info } from 'lucide-react';
+import { Trophy, AlertTriangle, ArrowRight, RefreshCw, TrendingDown, Clock, Info, LayoutGrid, TableProperties } from 'lucide-react';
 import { compareBasketAction } from '@/lib/actions';
 import { formatPrice, formatTimeAgo } from '@/lib/utils';
 import type { ComparisonResult, SupermarketComparison } from '@/types';
@@ -43,12 +43,15 @@ function CompareSkeleton() {
   );
 }
 
+type ViewMode = 'cards' | 'table';
+
 function ComparePageInner() {
   const searchParams = useSearchParams();
   const basketId = searchParams.get('basketId');
   const [result, setResult] = useState<ComparisonResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('cards');
 
   useEffect(() => {
     async function run() {
@@ -116,7 +119,35 @@ function ComparePageInner() {
         חזרה לסל
       </Link>
 
-      <h1 className="text-2xl font-bold text-gray-900">השוואת מחירים</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">השוואת מחירים</h1>
+        <div className="flex rounded-lg border border-gray-200 bg-white p-0.5">
+          <button
+            onClick={() => setViewMode('cards')}
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              viewMode === 'cards'
+                ? 'bg-brand-50 text-brand-700'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            aria-label="תצוגת כרטיסים"
+          >
+            <LayoutGrid className="h-4 w-4" />
+            <span className="hidden sm:inline">כרטיסים</span>
+          </button>
+          <button
+            onClick={() => setViewMode('table')}
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              viewMode === 'table'
+                ? 'bg-brand-50 text-brand-700'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            aria-label="תצוגת טבלה"
+          >
+            <TableProperties className="h-4 w-4" />
+            <span className="hidden sm:inline">טבלה</span>
+          </button>
+        </div>
+      </div>
 
       {/* Info banner */}
       <div className="mt-4 rounded-lg bg-brand-50 p-4 text-sm text-brand-800">
@@ -137,17 +168,139 @@ function ComparePageInner() {
       </div>
 
       {/* Supermarket cards */}
-      <div className="mt-6 space-y-4">
-        {result.comparisons.map((comp, index) => (
-          <SupermarketCard
-            key={comp.supermarketId}
-            comparison={comp}
-            rank={index + 1}
-            isBest={comp.supermarketId === result.bestSupermarketId}
-            basketId={basketId!}
-          />
-        ))}
-      </div>
+      {viewMode === 'cards' && (
+        <div className="mt-6 space-y-4">
+          {result.comparisons.map((comp, index) => (
+            <SupermarketCard
+              key={comp.supermarketId}
+              comparison={comp}
+              rank={index + 1}
+              isBest={comp.supermarketId === result.bestSupermarketId}
+              basketId={basketId!}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Comparison table */}
+      {viewMode === 'table' && (
+        <ComparisonTable result={result} />
+      )}
+    </div>
+  );
+}
+
+function ComparisonTable({ result }: { result: ComparisonResult }) {
+  // Sort supermarkets by total (cheapest first)
+  const sortedComparisons = [...result.comparisons].sort((a, b) => a.total - b.total);
+
+  // Collect all unique basket items (use the first supermarket's itemResults as the canonical list)
+  const firstComp = result.comparisons[0];
+  const basketItems = firstComp.itemResults.map((item) => ({
+    basketItemId: item.basketItemId,
+    displayName: item.requestedDisplayName,
+    quantity: item.quantity,
+  }));
+
+  // Build a lookup: basketItemId -> supermarketId -> price info
+  const priceMap = new Map<string, Map<string, { totalPrice: number | null; resolutionType: string }>>();
+  for (const item of basketItems) {
+    const supermarketPrices = new Map<string, { totalPrice: number | null; resolutionType: string }>();
+    for (const comp of sortedComparisons) {
+      const match = comp.itemResults.find((r) => r.basketItemId === item.basketItemId);
+      supermarketPrices.set(comp.supermarketId, {
+        totalPrice: match?.totalPrice ?? null,
+        resolutionType: match?.resolutionType ?? 'unavailable',
+      });
+    }
+    priceMap.set(item.basketItemId, supermarketPrices);
+  }
+
+  // For each basket item, find min and max price across supermarkets (for color coding)
+  const minMaxPerItem = new Map<string, { min: number; max: number }>();
+  for (const item of basketItems) {
+    const prices = sortedComparisons
+      .map((comp) => priceMap.get(item.basketItemId)?.get(comp.supermarketId)?.totalPrice)
+      .filter((p): p is number => p != null);
+    if (prices.length > 0) {
+      minMaxPerItem.set(item.basketItemId, { min: Math.min(...prices), max: Math.max(...prices) });
+    }
+  }
+
+  return (
+    <div className="mt-6 overflow-x-auto rounded-lg border border-gray-200" dir="rtl">
+      <table className="w-full min-w-[480px] text-sm">
+        <thead>
+          <tr className="bg-gray-50 border-b border-gray-200">
+            <th className="sticky right-0 z-10 bg-gray-50 px-4 py-3 text-right font-semibold text-gray-700 min-w-[140px]">
+              מוצר
+            </th>
+            {sortedComparisons.map((comp, idx) => (
+              <th key={comp.supermarketId} className="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">
+                <div className="flex flex-col items-center gap-0.5">
+                  <span>{comp.supermarketName}</span>
+                  {idx === 0 && (
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-brand-600">
+                      <Trophy className="h-3 w-3" />
+                      זול ביותר
+                    </span>
+                  )}
+                </div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {basketItems.map((item, rowIdx) => {
+            const minMax = minMaxPerItem.get(item.basketItemId);
+            return (
+              <tr key={item.basketItemId} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                <td className="sticky right-0 z-10 px-4 py-2.5 font-medium text-gray-900 min-w-[140px]" style={{ backgroundColor: rowIdx % 2 === 0 ? 'white' : 'rgb(249 250 251 / 0.5)' }}>
+                  <div className="truncate max-w-[180px]">{item.displayName}</div>
+                  {item.quantity > 1 && (
+                    <span className="text-xs text-gray-400">x{item.quantity}</span>
+                  )}
+                </td>
+                {sortedComparisons.map((comp) => {
+                  const info = priceMap.get(item.basketItemId)?.get(comp.supermarketId);
+                  const price = info?.totalPrice;
+                  const isUnavailable = info?.resolutionType === 'unavailable';
+
+                  let cellColor = '';
+                  if (price != null && minMax && minMax.min !== minMax.max) {
+                    if (price === minMax.min) cellColor = 'text-green-700 bg-green-50';
+                    else if (price === minMax.max) cellColor = 'text-red-700 bg-red-50';
+                  }
+
+                  return (
+                    <td key={comp.supermarketId} className={`px-4 py-2.5 text-center whitespace-nowrap ${cellColor}`}>
+                      {isUnavailable ? (
+                        <span className="text-xs text-gray-400">--</span>
+                      ) : price != null ? (
+                        <span className="font-medium">{formatPrice(price)}</span>
+                      ) : (
+                        <span className="text-xs text-gray-400">--</span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+        <tfoot>
+          <tr className="border-t-2 border-gray-300 bg-gray-50 font-bold">
+            <td className="sticky right-0 z-10 bg-gray-50 px-4 py-3 text-right text-gray-900">
+              סה&quot;כ
+            </td>
+            {sortedComparisons.map((comp, idx) => (
+              <td key={comp.supermarketId} className={`px-4 py-3 text-center text-gray-900 ${idx === 0 ? 'text-brand-700' : ''}`}>
+                {formatPrice(comp.total)}
+              </td>
+            ))}
+          </tr>
+        </tfoot>
+      </table>
     </div>
   );
 }

@@ -75,6 +75,42 @@ async function main() {
   const cheese = await prisma.productCategory.create({
     data: { name: 'גבינות', slug: 'cheese' },
   });
+  const butter = await prisma.productCategory.create({
+    data: { name: 'חמאה', slug: 'butter' },
+  });
+  const flour = await prisma.productCategory.create({
+    data: { name: 'קמח', slug: 'flour' },
+  });
+  const cannedTomatoes = await prisma.productCategory.create({
+    data: { name: 'עגבניות שימורים', slug: 'canned-tomatoes' },
+  });
+  const spreads = await prisma.productCategory.create({
+    data: { name: 'ממרחים', slug: 'spreads' },
+  });
+  const condiments = await prisma.productCategory.create({
+    data: { name: 'רטבים ותבלינים', slug: 'condiments' },
+  });
+  const legumes = await prisma.productCategory.create({
+    data: { name: 'קטניות', slug: 'legumes' },
+  });
+  const groundMeat = await prisma.productCategory.create({
+    data: { name: 'בשר טחון', slug: 'ground-meat' },
+  });
+  const toiletPaper = await prisma.productCategory.create({
+    data: { name: 'נייר טואלט', slug: 'toilet-paper' },
+  });
+  const diapers = await prisma.productCategory.create({
+    data: { name: 'חיתולים', slug: 'diapers' },
+  });
+  const babyfood = await prisma.productCategory.create({
+    data: { name: 'מזון לתינוקות', slug: 'baby-food' },
+  });
+  const tehina = await prisma.productCategory.create({
+    data: { name: 'טחינה', slug: 'tehina' },
+  });
+  const hummus = await prisma.productCategory.create({
+    data: { name: 'חומוס', slug: 'hummus' },
+  });
 
   // ── Attribute Definitions ──
   const attrDefs = [
@@ -141,6 +177,42 @@ async function main() {
     // גבינות
     { categoryId: cheese.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['צהובה', 'לבנה', 'שמנת', 'בולגרית', 'מוצרלה']), sortOrder: 1 },
     { categoryId: cheese.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['200 גרם', '250 גרם', '500 גרם']), sortOrder: 2 },
+    // חמאה
+    { categoryId: butter.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['חמאה', 'מרגרינה', 'חמאה מלוחה']), sortOrder: 1 },
+    { categoryId: butter.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['100 גרם', '200 גרם', '250 גרם']), sortOrder: 2 },
+    // קמח
+    { categoryId: flour.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['לבן', 'מלא', 'כוסמין', 'תופח']), sortOrder: 1 },
+    { categoryId: flour.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['500 גרם', '1 ק״ג', '2 ק״ג']), sortOrder: 2 },
+    // עגבניות שימורים
+    { categoryId: cannedTomatoes.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['רסק', 'מרוסקות', 'שלמות', 'רוטב']), sortOrder: 1 },
+    { categoryId: cannedTomatoes.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['400 גרם', '800 גרם']), sortOrder: 2 },
+    // ממרחים
+    { categoryId: spreads.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['חמאת בוטנים', 'שוקולד', 'ריבה', 'דבש']), sortOrder: 1 },
+    { categoryId: spreads.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['200 גרם', '350 גרם', '500 גרם']), sortOrder: 2 },
+    // רטבים ותבלינים
+    { categoryId: condiments.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['קטשופ', 'מיונז', 'חרדל', 'סויה', 'חריף']), sortOrder: 1 },
+    { categoryId: condiments.id, key: 'volume', label: 'נפח', type: 'enum', possibleValues: JSON.stringify(['250 מ״ל', '500 מ״ל', '750 מ״ל']), sortOrder: 2 },
+    // קטניות
+    { categoryId: legumes.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['עדשים', 'חומוס יבש', 'שעועית', 'פול']), sortOrder: 1 },
+    { categoryId: legumes.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['500 גרם', '1 ק״ג']), sortOrder: 2 },
+    // בשר טחון
+    { categoryId: groundMeat.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['בקר', 'עוף', 'מעורב']), sortOrder: 1 },
+    { categoryId: groundMeat.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['500 גרם', '1 ק״ג']), sortOrder: 2 },
+    // נייר טואלט
+    { categoryId: toiletPaper.id, key: 'layers', label: 'שכבות', type: 'enum', possibleValues: JSON.stringify(['2', '3', '4']), sortOrder: 1 },
+    { categoryId: toiletPaper.id, key: 'rolls', label: 'גלילים', type: 'enum', possibleValues: JSON.stringify(['8', '16', '24', '32']), sortOrder: 2 },
+    // חיתולים
+    { categoryId: diapers.id, key: 'size', label: 'מידה', type: 'enum', possibleValues: JSON.stringify(['1', '2', '3', '4', '5', '6']), sortOrder: 1 },
+    { categoryId: diapers.id, key: 'packCount', label: 'כמות באריזה', type: 'enum', possibleValues: JSON.stringify(['24', '36', '48', '72']), sortOrder: 2 },
+    // מזון לתינוקות
+    { categoryId: babyfood.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['תמ״ל', 'דייסה', 'מחית']), sortOrder: 1 },
+    { categoryId: babyfood.id, key: 'stage', label: 'שלב', type: 'enum', possibleValues: JSON.stringify(['0-6', '6-12', '12+']), sortOrder: 2 },
+    // טחינה
+    { categoryId: tehina.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['גולמית', 'מלאה', 'אורגנית']), sortOrder: 1 },
+    { categoryId: tehina.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['250 גרם', '500 גרם', '1 ק״ג']), sortOrder: 2 },
+    // חומוס
+    { categoryId: hummus.id, key: 'type', label: 'סוג', type: 'enum', possibleValues: JSON.stringify(['קלאסי', 'משואשה', 'עם טחינה', 'חריף']), sortOrder: 1 },
+    { categoryId: hummus.id, key: 'weight', label: 'משקל', type: 'enum', possibleValues: JSON.stringify(['200 גרם', '400 גרם', '1 ק״ג']), sortOrder: 2 },
   ];
 
   for (const attr of attrDefs) {
@@ -524,6 +596,171 @@ async function main() {
     { supermarketId: ramiLevy.id, externalName: 'גד מוצרלה טרייה 200 גרם', price: 15.90 },
   ]);
 
+  // ── חמאה ──
+  await seedProduct(butter.id, 'חמאה 200 גרם', 'תנובה', { type: 'חמאה', weight: '200 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'תנובה חמאה 200 גרם', price: 8.90 },
+    { supermarketId: yochananof.id, externalName: 'חמאה תנובה 200 גרם', price: 8.50 },
+    { supermarketId: ramiLevy.id, externalName: 'תנובה חמאה 200 גר', price: 9.20 },
+  ]);
+  await seedProduct(butter.id, 'מרגרינה 250 גרם', 'שופרסל', { type: 'מרגרינה', weight: '250 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'שופרסל מרגרינה 250 גרם', price: 5.90, isPromo: true, promoDescription: '2 ב-10₪' },
+    { supermarketId: ramiLevy.id, externalName: 'מרגרינה שופרסל 250 גרם', price: 6.50 },
+  ]);
+
+  // ── קמח ──
+  await seedProduct(flour.id, 'קמח לבן 1 ק״ג', 'סוגת', { type: 'לבן', weight: '1 ק״ג' }, [
+    { supermarketId: shufersal.id, externalName: 'סוגת קמח לבן 1 ק״ג', price: 5.90 },
+    { supermarketId: yochananof.id, externalName: 'קמח סוגת לבן 1 ק״ג', price: 5.50 },
+    { supermarketId: ramiLevy.id, externalName: 'סוגת קמח לבן רגיל 1 ק״ג', price: 6.20 },
+  ]);
+  await seedProduct(flour.id, 'קמח מלא 1 ק״ג', 'סוגת', { type: 'מלא', weight: '1 ק״ג' }, [
+    { supermarketId: shufersal.id, externalName: 'סוגת קמח מלא 1 ק״ג', price: 7.90 },
+    { supermarketId: yochananof.id, externalName: 'קמח מלא סוגת 1 ק״ג', price: 7.50 },
+  ]);
+  await seedProduct(flour.id, 'קמח תופח 500 גרם', 'סוגת', { type: 'תופח', weight: '500 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'סוגת קמח תופח 500 גרם', price: 4.90 },
+    { supermarketId: ramiLevy.id, externalName: 'סוגת קמח תופח 500 גרם', price: 5.20 },
+  ]);
+
+  // ── עגבניות שימורים ──
+  await seedProduct(cannedTomatoes.id, 'רסק עגבניות 400 גרם', 'אוסם', { type: 'רסק', weight: '400 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'אוסם רסק עגבניות 400 גרם', price: 5.90 },
+    { supermarketId: yochananof.id, externalName: 'רסק עגבניות אוסם 400 גרם', price: 5.50 },
+    { supermarketId: ramiLevy.id, externalName: 'אוסם רסק עגבניות מרוכז 400 גרם', price: 6.20 },
+  ]);
+  await seedProduct(cannedTomatoes.id, 'עגבניות מרוסקות 800 גרם', 'מוטי', { type: 'מרוסקות', weight: '800 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'מוטי עגבניות מרוסקות 800 גרם', price: 9.90 },
+    { supermarketId: yochananof.id, externalName: 'עגבניות מרוסקות מוטי 800 גרם', price: 9.50 },
+    { supermarketId: ramiLevy.id, externalName: 'מוטי פולפה עגבניות 800 גרם', price: 10.50 },
+  ]);
+
+  // ── ממרחים ──
+  await seedProduct(spreads.id, 'חמאת בוטנים 350 גרם', 'שופרסל', { type: 'חמאת בוטנים', weight: '350 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'שופרסל חמאת בוטנים 350 גרם', price: 16.90 },
+    { supermarketId: yochananof.id, externalName: 'חמאת בוטנים שופרסל 350 גרם', price: 15.90 },
+    { supermarketId: ramiLevy.id, externalName: 'חמאת בוטנים 350 גרם', price: 17.50 },
+  ]);
+  await seedProduct(spreads.id, 'ממרח שוקולד 500 גרם', 'נוטלה', { type: 'שוקולד', weight: '500 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'נוטלה ממרח שוקולד 500 גרם', price: 24.90 },
+    { supermarketId: yochananof.id, externalName: 'ממרח נוטלה 500 גרם', price: 23.90 },
+    { supermarketId: ramiLevy.id, externalName: 'נוטלה 500 גרם', price: 25.90 },
+  ]);
+  await seedProduct(spreads.id, 'דבש טהור 350 גרם', null, { type: 'דבש', weight: '350 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'דבש טהור מפרחי בר 350 גרם', price: 29.90 },
+    { supermarketId: ramiLevy.id, externalName: 'דבש טהור 350 גרם', price: 27.90 },
+  ]);
+
+  // ── רטבים ותבלינים ──
+  await seedProduct(condiments.id, 'קטשופ 750 מ״ל', 'אוסם', { type: 'קטשופ', volume: '750 מ״ל' }, [
+    { supermarketId: shufersal.id, externalName: 'אוסם קטשופ 750 מ״ל', price: 12.90 },
+    { supermarketId: yochananof.id, externalName: 'קטשופ אוסם 750 מ״ל', price: 11.90 },
+    { supermarketId: ramiLevy.id, externalName: 'אוסם קטשופ קלאסי 750 מ״ל', price: 13.50 },
+  ]);
+  await seedProduct(condiments.id, 'מיונז 500 מ״ל', 'הלמנ׳ס', { type: 'מיונז', volume: '500 מ״ל' }, [
+    { supermarketId: shufersal.id, externalName: 'הלמנ׳ס מיונז 500 מ״ל', price: 14.90 },
+    { supermarketId: yochananof.id, externalName: 'מיונז הלמנ׳ס 500 מ״ל', price: 13.90 },
+    { supermarketId: ramiLevy.id, externalName: 'הלמנ׳ס מיונז קלאסי 500 מ״ל', price: 15.50 },
+  ]);
+  await seedProduct(condiments.id, 'רוטב סויה 250 מ״ל', 'קיקומן', { type: 'סויה', volume: '250 מ״ל' }, [
+    { supermarketId: shufersal.id, externalName: 'קיקומן רוטב סויה 250 מ״ל', price: 12.90 },
+    { supermarketId: ramiLevy.id, externalName: 'קיקומן סויה 250 מ״ל', price: 13.50 },
+  ]);
+
+  // ── קטניות ──
+  await seedProduct(legumes.id, 'עדשים כתומות 500 גרם', 'סוגת', { type: 'עדשים', weight: '500 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'סוגת עדשים כתומות 500 גרם', price: 9.90 },
+    { supermarketId: yochananof.id, externalName: 'עדשים כתומות סוגת 500 גרם', price: 9.50 },
+    { supermarketId: ramiLevy.id, externalName: 'סוגת עדשים כתומות 500 גרם', price: 10.50 },
+  ]);
+  await seedProduct(legumes.id, 'שעועית לבנה 1 ק״ג', 'סוגת', { type: 'שעועית', weight: '1 ק״ג' }, [
+    { supermarketId: shufersal.id, externalName: 'סוגת שעועית לבנה 1 ק״ג', price: 14.90 },
+    { supermarketId: yochananof.id, externalName: 'שעועית לבנה סוגת 1 ק״ג', price: 13.90 },
+  ]);
+
+  // ── בשר טחון ──
+  await seedProduct(groundMeat.id, 'בשר טחון בקר 500 גרם', 'טיב טעם', { type: 'בקר', weight: '500 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'טיב טעם בשר טחון בקר 500 גרם', price: 39.90 },
+    { supermarketId: yochananof.id, externalName: 'בשר טחון בקר טיב טעם 500 גרם', price: 37.90, isPromo: true, promoDescription: 'מבצע סוף שבוע' },
+    { supermarketId: ramiLevy.id, externalName: 'טיב טעם טחון בקר טרי 500 גרם', price: 41.90 },
+  ]);
+  await seedProduct(groundMeat.id, 'בשר טחון עוף 500 גרם', 'עוף טוב', { type: 'עוף', weight: '500 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'עוף טוב טחון עוף 500 גרם', price: 24.90 },
+    { supermarketId: yochananof.id, externalName: 'טחון עוף עוף טוב 500 גרם', price: 23.90 },
+    { supermarketId: ramiLevy.id, externalName: 'עוף טוב בשר טחון עוף 500 גרם', price: 25.90 },
+  ]);
+  await seedProduct(groundMeat.id, 'בשר טחון מעורב 1 ק״ג', 'טיב טעם', { type: 'מעורב', weight: '1 ק״ג' }, [
+    { supermarketId: shufersal.id, externalName: 'טיב טעם טחון מעורב 1 ק״ג', price: 64.90 },
+    { supermarketId: ramiLevy.id, externalName: 'טיב טעם בשר טחון מעורב 1 ק״ג', price: 66.90 },
+  ]);
+
+  // ── נייר טואלט ──
+  await seedProduct(toiletPaper.id, 'נייר טואלט 3 שכבות 32 גלילים', 'סנו', { layers: '3', rolls: '32' }, [
+    { supermarketId: shufersal.id, externalName: 'סנו נייר טואלט 3 שכבות 32 גלילים', price: 44.90 },
+    { supermarketId: yochananof.id, externalName: 'נייר טואלט סנו 32 גלילים', price: 42.90 },
+    { supermarketId: ramiLevy.id, externalName: 'סנו סופט נייר טואלט 32 גלילים', price: 46.90 },
+  ]);
+  await seedProduct(toiletPaper.id, 'נייר טואלט 4 שכבות 16 גלילים', 'לילי', { layers: '4', rolls: '16' }, [
+    { supermarketId: shufersal.id, externalName: 'לילי נייר טואלט 4 שכבות 16 גלילים', price: 34.90 },
+    { supermarketId: yochananof.id, externalName: 'נייר טואלט לילי 16 גלילים', price: 32.90, isPromo: true, promoDescription: '2 ב-60₪' },
+    { supermarketId: ramiLevy.id, externalName: 'לילי פרימיום 4 שכבות 16 גלילים', price: 36.90 },
+  ]);
+
+  // ── חיתולים ──
+  await seedProduct(diapers.id, 'חיתולים מידה 4 אריזת 72', 'האגיס', { size: '4', packCount: '72' }, [
+    { supermarketId: shufersal.id, externalName: 'האגיס חיתולים מידה 4 72 יח׳', price: 89.90 },
+    { supermarketId: yochananof.id, externalName: 'חיתולי האגיס מידה 4 72 יח׳', price: 84.90 },
+    { supermarketId: ramiLevy.id, externalName: 'האגיס פרידום מידה 4 72 יח׳', price: 92.90 },
+  ]);
+  await seedProduct(diapers.id, 'חיתולים מידה 3 אריזת 48', 'פמפרס', { size: '3', packCount: '48' }, [
+    { supermarketId: shufersal.id, externalName: 'פמפרס חיתולים מידה 3 48 יח׳', price: 69.90 },
+    { supermarketId: yochananof.id, externalName: 'חיתולי פמפרס מידה 3 48 יח׳', price: 65.90 },
+    { supermarketId: ramiLevy.id, externalName: 'פמפרס בייבי דריי מידה 3 48 יח׳', price: 72.90 },
+  ]);
+
+  // ── מזון לתינוקות ──
+  await seedProduct(babyfood.id, 'תמ״ל שלב 1 700 גרם', 'מעדנות', { type: 'תמ״ל', stage: '0-6' }, [
+    { supermarketId: shufersal.id, externalName: 'מעדנות תמ״ל שלב 1 700 גרם', price: 54.90 },
+    { supermarketId: yochananof.id, externalName: 'תמ״ל מעדנות שלב 1 700 גרם', price: 52.90 },
+    { supermarketId: ramiLevy.id, externalName: 'מעדנות שלב 1 תמ״ל 700 גרם', price: 56.90 },
+  ]);
+  await seedProduct(babyfood.id, 'דייסת אורז שלב 6+ חודשים', 'מטרנה', { type: 'דייסה', stage: '6-12' }, [
+    { supermarketId: shufersal.id, externalName: 'מטרנה דייסת אורז 6+ חודשים', price: 19.90 },
+    { supermarketId: yochananof.id, externalName: 'דייסה מטרנה אורז 6+', price: 18.90 },
+    { supermarketId: ramiLevy.id, externalName: 'מטרנה דייסת אורז לתינוק 6+', price: 20.90 },
+  ]);
+  await seedProduct(babyfood.id, 'מחית פירות 12+ חודשים', 'מטרנה', { type: 'מחית', stage: '12+' }, [
+    { supermarketId: shufersal.id, externalName: 'מטרנה מחית פירות 12+', price: 8.90 },
+    { supermarketId: ramiLevy.id, externalName: 'מטרנה מחית פירות מעורב 12+', price: 9.50 },
+  ]);
+
+  // ── טחינה ──
+  await seedProduct(tehina.id, 'טחינה גולמית 500 גרם', 'האחים סלימאן', { type: 'גולמית', weight: '500 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'האחים סלימאן טחינה גולמית 500 גרם', price: 22.90 },
+    { supermarketId: yochananof.id, externalName: 'טחינה סלימאן גולמית 500 גרם', price: 21.90 },
+    { supermarketId: ramiLevy.id, externalName: 'האחים סלימאן טחינה 500 גרם', price: 23.90 },
+  ]);
+  await seedProduct(tehina.id, 'טחינה מלאה 250 גרם', 'הר ברכה', { type: 'מלאה', weight: '250 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'הר ברכה טחינה מלאה 250 גרם', price: 14.90 },
+    { supermarketId: yochananof.id, externalName: 'טחינה הר ברכה מלאה 250 גרם', price: 13.90 },
+    { supermarketId: ramiLevy.id, externalName: 'הר ברכה טחינה מלאה 250 גרם', price: 15.50 },
+  ]);
+
+  // ── חומוס ──
+  await seedProduct(hummus.id, 'חומוס קלאסי 400 גרם', 'צבר', { type: 'קלאסי', weight: '400 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'צבר חומוס קלאסי 400 גרם', price: 9.90 },
+    { supermarketId: yochananof.id, externalName: 'חומוס צבר קלאסי 400 גרם', price: 9.50 },
+    { supermarketId: ramiLevy.id, externalName: 'צבר חומוס קלאסי 400 גרם', price: 10.50 },
+  ]);
+  await seedProduct(hummus.id, 'חומוס משואשה 400 גרם', 'צבר', { type: 'משואשה', weight: '400 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'צבר חומוס משואשה 400 גרם', price: 11.90 },
+    { supermarketId: yochananof.id, externalName: 'חומוס משואשה צבר 400 גרם', price: 11.50 },
+    { supermarketId: ramiLevy.id, externalName: 'צבר משואשה 400 גרם', price: 12.50 },
+  ]);
+  await seedProduct(hummus.id, 'חומוס עם טחינה 200 גרם', 'שטראוס', { type: 'עם טחינה', weight: '200 גרם' }, [
+    { supermarketId: shufersal.id, externalName: 'שטראוס חומוס עם טחינה 200 גרם', price: 7.90 },
+    { supermarketId: ramiLevy.id, externalName: 'שטראוס חומוס טחינה 200 גרם', price: 8.50 },
+  ]);
+
   // ── Demo Basket ──
   const demoBasket = await prisma.basket.create({
     data: {
@@ -570,10 +807,10 @@ async function main() {
   });
 
   console.log(`✓ בסיס הנתונים נוצר בהצלחה`);
-  console.log(`  - 20 קטגוריות מוצרים`);
-  console.log(`  - 30 מוצרים קנוניים`);
+  console.log(`  - 32 קטגוריות מוצרים`);
+  console.log(`  - 83 מוצרים קנוניים`);
   console.log(`  - 3 סופרמרקטים ישראליים עם מקורות נתונים`);
-  console.log(`  - ~80 מוצרים בסופרמרקטים עם תמונות מחיר`);
+  console.log(`  - ~233 מוצרים בסופרמרקטים עם תמונות מחיר`);
   console.log(`  - 1 סל לדוגמה (id: ${demoBasket.id})`);
 }
 
