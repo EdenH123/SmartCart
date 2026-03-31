@@ -1,0 +1,23 @@
+{
+  "name": "סל חכם - השוואת מחירים",
+  "short_name": "סל חכם",
+  "description": "השוואת מחירים חכמה לסופרמרקטים בישראל",
+  "start_url": "/",
+  "display": "standalone",
+  "dir": "rtl",
+  "lang": "he",
+  "theme_color": "#25a768",
+  "background_color": "#f9fafb",
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

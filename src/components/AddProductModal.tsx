@@ -1,13 +1,43 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { X, Search, ChevronRight, ShoppingCart, Loader2, Check } from 'lucide-react';
+import { X, Search, ChevronRight, ShoppingCart, Loader2, Check, Clock } from 'lucide-react';
 import { searchCategoriesAction, searchProductsAction } from '@/lib/actions';
 import type { CategoryWithAttributes, MatchMode, UserConstraints, BasketItemInput, ProductSearchResult } from '@/types';
 
 type Step = 'search' | 'configure' | 'preview';
 
 const STEPS: Step[] = ['search', 'configure', 'preview'];
+
+const RECENT_SEARCHES_KEY = 'smartcart-recent-searches';
+const MAX_RECENT = 5;
+
+interface RecentSearch {
+  id: string;
+  name: string;
+}
+
+function getRecentSearches(): RecentSearch[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(RECENT_SEARCHES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.slice(0, MAX_RECENT) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentSearch(item: RecentSearch): void {
+  const current = getRecentSearches().filter((r) => r.id !== item.id);
+  const updated = [item, ...current].slice(0, MAX_RECENT);
+  localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+}
+
+function clearRecentSearches(): void {
+  localStorage.removeItem(RECENT_SEARCHES_KEY);
+}
 
 interface Props {
   open: boolean;
@@ -26,6 +56,7 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
   const [selectedProduct, setSelectedProduct] = useState<ProductSearchResult | null>(null);
   const [matchingProducts, setMatchingProducts] = useState<ProductSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
 
   const reset = useCallback(() => {
     setStep('search');
@@ -40,7 +71,10 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
   }, []);
 
   useEffect(() => {
-    if (open) reset();
+    if (open) {
+      reset();
+      setRecentSearches(getRecentSearches());
+    }
   }, [open, reset]);
 
   // Close on Escape
@@ -73,6 +107,8 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
       initConstraints[attr.key] = 'any';
     }
     setConstraints(initConstraints);
+    saveRecentSearch({ id: cat.id, name: cat.name });
+    setRecentSearches(getRecentSearches());
     setStep('configure');
   };
 
@@ -139,7 +175,7 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 sm:pt-20">
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
@@ -211,7 +247,42 @@ export default function AddProductModal({ open, onClose, onAdd }: Props) {
               ))}
             </div>
 
-            {searchQuery.length === 0 && (
+            {searchQuery.length === 0 && recentSearches.length > 0 && (
+              <div className="mt-4">
+                <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-2">
+                  <Clock className="h-4 w-4" />
+                  <span>חיפושים אחרונים</span>
+                </div>
+                {recentSearches.map((recent) => (
+                  <button
+                    key={recent.id}
+                    onClick={() => {
+                      const match = categories.find((c) => c.id === recent.id);
+                      if (match) {
+                        handleSelectCategory(match);
+                      } else {
+                        // Trigger search to fetch the category, then select
+                        setSearchQuery(recent.name);
+                      }
+                    }}
+                    className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-right hover:bg-gray-50 transition-colors"
+                  >
+                    <p className="text-sm font-medium text-gray-900">{recent.name}</p>
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </button>
+                ))}
+                <button
+                  onClick={() => {
+                    clearRecentSearches();
+                    setRecentSearches([]);
+                  }}
+                  className="mt-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  נקה היסטוריה
+                </button>
+              </div>
+            )}
+            {searchQuery.length === 0 && recentSearches.length === 0 && (
               <p className="py-8 text-center text-sm text-gray-500">
                 התחילו להקליד כדי לחפש קטגוריות
               </p>

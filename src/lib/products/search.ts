@@ -38,6 +38,46 @@ const CATEGORY_INCLUDE = {
   attributeDefinitions: { orderBy: { sortOrder: 'asc' as const } },
 } as const;
 
+/**
+ * Returns true if all characters of `query` appear in `text` in order.
+ * Also returns true for exact substring matches.
+ */
+export function fuzzyMatch(text: string, query: string): boolean {
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+
+  // Exact substring match
+  if (lowerText.includes(lowerQuery)) return true;
+
+  // Fuzzy: all query chars appear in order
+  let ti = 0;
+  for (let qi = 0; qi < lowerQuery.length; qi++) {
+    const idx = lowerText.indexOf(lowerQuery[qi], ti);
+    if (idx === -1) return false;
+    ti = idx + 1;
+  }
+  return true;
+}
+
+/**
+ * Scores relevance of `text` to `query` on a 0-100 scale.
+ *  - Exact match = 100
+ *  - Starts with = 90
+ *  - Contains    = 70
+ *  - Fuzzy match = 50
+ *  - No match    = 0
+ */
+export function fuzzyScore(text: string, query: string): number {
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+
+  if (lowerText === lowerQuery) return 100;
+  if (lowerText.startsWith(lowerQuery)) return 90;
+  if (lowerText.includes(lowerQuery)) return 70;
+  if (fuzzyMatch(text, query)) return 50;
+  return 0;
+}
+
 export async function searchCategories(query: string): Promise<CategoryWithAttributes[]> {
   if (!query || query.length < 1) return [];
 
@@ -52,7 +92,11 @@ export async function searchCategories(query: string): Promise<CategoryWithAttri
     include: CATEGORY_INCLUDE,
   });
 
-  return categories.map(transformCategory);
+  // Post-filter with fuzzy matching and sort by relevance score
+  return categories
+    .map(transformCategory)
+    .filter((cat) => fuzzyMatch(cat.name, query))
+    .sort((a, b) => fuzzyScore(b.name, query) - fuzzyScore(a.name, query));
 }
 
 export async function getCategory(categoryId: string): Promise<CategoryWithAttributes | null> {

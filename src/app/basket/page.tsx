@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Trash2, ShoppingCart, ArrowRight, Scale, Minus, Sparkles, Loader2, Package } from 'lucide-react';
+import { Plus, Trash2, ShoppingCart, ArrowRight, Scale, Minus, Sparkles, Loader2, Package, Share2 } from 'lucide-react';
 import {
   getOrCreateBasket,
   getBasketItems,
@@ -13,6 +13,8 @@ import {
   loadDemoBasket,
   quickAddToBasket,
   getItemPriceRanges,
+  shareBasket,
+  importSharedBasket,
 } from '@/lib/actions';
 import { useToast } from '@/components/Toast';
 import AddProductModal from '@/components/AddProductModal';
@@ -96,9 +98,17 @@ function BasketPageInner() {
   useEffect(() => {
     async function init() {
       try {
+        const shareParam = searchParams.get('share');
         const demo = searchParams.get('demo');
         let id: string;
-        if (demo === 'true') {
+        if (shareParam) {
+          id = await importSharedBasket(shareParam);
+          setBasketId(id);
+          await loadBasket(id);
+          showToast('success', 'סל משותף נטען!');
+          router.replace('/basket');
+          return;
+        } else if (demo === 'true') {
           id = await loadDemoBasket();
           router.replace('/basket');
         } else {
@@ -165,6 +175,21 @@ function BasketPageInner() {
     }
   };
 
+  const handleShare = async () => {
+    if (!basketId) return;
+    try {
+      setBusy(true);
+      const encoded = await shareBasket(basketId);
+      const url = `${window.location.origin}/basket?share=${encoded}`;
+      await navigator.clipboard.writeText(url);
+      showToast('success', 'הקישור הועתק!');
+    } catch {
+      showToast('error', 'שגיאה ביצירת קישור שיתוף');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleCompare = () => {
     if (!basketId) return;
     router.push(`/compare?basketId=${basketId}`);
@@ -204,9 +229,15 @@ function BasketPageInner() {
         </div>
         <div className="flex gap-2">
           {items.length > 0 && (
-            <button onClick={handleClear} disabled={busy} className="btn-ghost text-red-600 hover:bg-red-50 text-xs">
-              נקה הכל
-            </button>
+            <>
+              <button onClick={handleShare} disabled={busy} className="btn-ghost text-gray-600 hover:bg-gray-100 text-xs gap-1">
+                <Share2 className="h-3.5 w-3.5" />
+                שתף
+              </button>
+              <button onClick={handleClear} disabled={busy} className="btn-ghost text-red-600 hover:bg-red-50 text-xs">
+                נקה הכל
+              </button>
+            </>
           )}
           <button onClick={() => setShowAddModal(true)} disabled={busy} className="btn-primary gap-1.5">
             <Plus className="h-4 w-4" />
@@ -279,8 +310,8 @@ function BasketPageInner() {
             {items.map((item, index) => (
               <div
                 key={item.id}
-                className={`card p-4 transition-all duration-200 ${removingId === item.id ? 'opacity-50 scale-[0.98]' : ''}`}
-                style={{ animationDelay: `${index * 50}ms` }}
+                className={`card p-4 animate-slide-up transition-all duration-300 ${removingId === item.id ? 'opacity-0 scale-[0.97]' : ''}`}
+                style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
               >
                 <div className="flex items-start gap-3 sm:gap-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-50">

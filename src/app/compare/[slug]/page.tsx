@@ -1,12 +1,13 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowRight, AlertTriangle, RefreshCw, Tag, Check, X as XIcon, Clock, Timer } from 'lucide-react';
-import { compareBasketAction } from '@/lib/actions';
+import { ArrowRight, AlertTriangle, RefreshCw, Tag, Check, X as XIcon, Clock, Timer, BarChart3, Loader2 } from 'lucide-react';
+import { compareBasketAction, getPriceHistory } from '@/lib/actions';
 import { formatPrice, formatTimeAgo, formatPromoExpiry } from '@/lib/utils';
-import type { ComparisonResult, SupermarketComparison, ItemResolution } from '@/types';
+import PriceHistoryChart from '@/components/PriceHistoryChart';
+import type { ComparisonResult, SupermarketComparison, ItemResolution, PriceHistoryData } from '@/types';
 
 export default function BreakdownPage() {
   return (
@@ -124,6 +125,26 @@ function BreakdownPageInner() {
 
 function ItemRow({ item }: { item: ItemResolution }) {
   const isUnavailable = item.resolutionType === 'unavailable';
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyData, setHistoryData] = useState<PriceHistoryData | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const toggleHistory = useCallback(async () => {
+    if (showHistory) {
+      setShowHistory(false);
+      return;
+    }
+    setShowHistory(true);
+    if (historyData) return; // already fetched
+    if (!item.canonicalProductId) return;
+    setHistoryLoading(true);
+    try {
+      const data = await getPriceHistory(item.canonicalProductId);
+      setHistoryData(data);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [showHistory, historyData, item.canonicalProductId]);
 
   return (
     <div className={`card p-4 ${isUnavailable ? 'opacity-60' : ''}`}>
@@ -208,6 +229,17 @@ function ItemRow({ item }: { item: ItemResolution }) {
               </span>
             )}
           </div>
+
+          {/* Price history toggle */}
+          {item.canonicalProductId && !isUnavailable && (
+            <button
+              onClick={toggleHistory}
+              className="mt-2 ml-8 inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              <BarChart3 className="h-3 w-3" />
+              היסטוריית מחירים
+            </button>
+          )}
         </div>
 
         {/* Price */}
@@ -226,6 +258,19 @@ function ItemRow({ item }: { item: ItemResolution }) {
           )}
         </div>
       </div>
+
+      {/* Price history chart */}
+      {showHistory && (
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          {historyLoading ? (
+            <div className="flex items-center justify-center h-[200px]">
+              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+            </div>
+          ) : historyData ? (
+            <PriceHistoryChart data={historyData} />
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

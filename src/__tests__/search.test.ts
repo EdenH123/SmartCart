@@ -96,7 +96,7 @@ describe('searchCategories', () => {
       makeCategory({ attributeDefinitions: [] }),
     ]);
 
-    const result = await searchCategories('test');
+    const result = await searchCategories('חלב');
     expect(result[0].attributes).toEqual([]);
   });
 
@@ -109,7 +109,7 @@ describe('searchCategories', () => {
       }),
     ]);
 
-    const result = await searchCategories('test');
+    const result = await searchCategories('חלב');
     expect(result[0].attributes[0].possibleValues).toEqual([]);
   });
 });

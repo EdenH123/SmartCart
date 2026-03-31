@@ -39,6 +39,15 @@ export function formatPromoExpiry(endDateStr: string | null): string | null {
   return `עד ${end.toLocaleDateString('he-IL')}`;
 }
 
+export function isStale(dateStr: string | null, thresholdHours: number = 24): boolean {
+  if (!dateStr) return true;
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return true;
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  return diffMs > thresholdHours * 60 * 60 * 1000;
+}
+
 export function buildDisplayName(
   categoryName: string,
   constraints: Record<string, unknown>

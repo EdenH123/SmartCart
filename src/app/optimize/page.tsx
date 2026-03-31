@@ -178,10 +178,11 @@ function OptimizePageInner() {
       <div className="mt-6">
         <h2 className="text-lg font-semibold text-gray-900">פריטים</h2>
         <div className="mt-3 space-y-3">
-          {result.items.map((item) => (
+          {result.items.map((item, index) => (
             <div
               key={item.basketItemId}
-              className={`card p-4 ${item.changed ? 'ring-1 ring-brand-200 bg-brand-50/30' : ''}`}
+              className={`card p-4 animate-slide-up ${item.changed ? 'ring-1 ring-brand-200 bg-brand-50/30' : ''}`}
+              style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
             >
               <div className="flex items-start justify-between">
                 <div className="min-w-0 flex-1">
