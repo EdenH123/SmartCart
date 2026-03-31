@@ -4,6 +4,7 @@ import { ToastProvider } from '@/components/Toast';
 import { Header } from '@/components/Header';
 import { ServiceWorkerRegistrar } from '@/components/ServiceWorkerRegistrar';
 import { LocaleProvider } from '@/lib/i18n/context';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export const metadata: Metadata = {
   title: 'סל חכם - השוואת מחירי מצרכים',
@@ -37,7 +38,11 @@ export default function RootLayout({
           <ToastProvider>
             <div className="min-h-screen">
               <Header />
-              <main id="main-content">{children}</main>
+              <main id="main-content">
+                <ErrorBoundary section="תוכן הדף">
+                  {children}
+                </ErrorBoundary>
+              </main>
             </div>
           </ToastProvider>
         </LocaleProvider>
