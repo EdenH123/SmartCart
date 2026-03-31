@@ -56,6 +56,18 @@ export function resetRecIdCounter(): void {
   recIdCounter = 0;
 }
 
+// ── Helpers ──
+
+function findMinBy<T>(arr: T[], fn: (item: T) => number): T | undefined {
+  let best: T | undefined;
+  let bestVal = Infinity;
+  for (const item of arr) {
+    const val = fn(item);
+    if (val < bestVal) { bestVal = val; best = item; }
+  }
+  return best;
+}
+
 // ── Scoring ──
 
 const PRICE_WEIGHT = 1.0;
@@ -121,9 +133,7 @@ function findCheaperAlternatives(
 
   if (candidates.length === 0) return [];
 
-  // Sort cheapest first
-  candidates.sort((a, b) => a.price - b.price);
-  const best = candidates[0];
+  const best = findMinBy(candidates, (c) => c.price)!;
   const savingsPerUnit = currentProduct.price - best.price;
   const totalSavings = savingsPerUnit * item.quantity;
   const percentage = Math.round((savingsPerUnit / currentProduct.price) * 100);
@@ -170,7 +180,7 @@ function findPromoOpportunities(
 
   if (promoProducts.length === 0) return [];
 
-  const cheapestPromo = promoProducts.sort((a, b) => a.price - b.price)[0];
+  const cheapestPromo = findMinBy(promoProducts, (p) => p.price)!;
 
   // If user already has the promo product, no recommendation needed
   if (currentProduct && currentProduct.id === cheapestPromo.id) return [];
@@ -193,7 +203,7 @@ function findPromoOpportunities(
         passesConstraints(p.canonicalProduct.metadata, item.userConstraints)
     );
     if (regularProducts.length === 0) return [];
-    const cheapestRegular = regularProducts.sort((a, b) => a.price - b.price)[0];
+    const cheapestRegular = findMinBy(regularProducts, (p) => p.price)!;
     comparePrice = cheapestRegular.price;
     compareName = cheapestRegular.externalName;
   }
@@ -257,8 +267,7 @@ function findConstraintRelaxations(
 
     if (candidates.length === 0) continue;
 
-    candidates.sort((a, b) => a.price - b.price);
-    const best = candidates[0];
+    const best = findMinBy(candidates, (c) => c.price)!;
 
     // Only suggest if the relaxed product actually differs in this attribute
     const bestAttrValue = best.canonicalProduct.metadata[key];
@@ -382,7 +391,7 @@ function findQuantitySuggestions(
     );
     if (regularProducts.length === 0) continue;
 
-    const cheapestRegular = regularProducts.sort((a, b) => a.price - b.price)[0];
+    const cheapestRegular = findMinBy(regularProducts, (p) => p.price)!;
     const regularCostForQty = cheapestRegular.price * suggestedQty;
     const promoCostForQty = promo.price * suggestedQty;
     const savings = regularCostForQty - promoCostForQty;
@@ -516,8 +525,7 @@ export function optimizeBasket(
     }
 
     // Pick cheapest using optimization score
-    candidates.sort((a, b) => optimizationScore(a, item) - optimizationScore(b, item));
-    const best = candidates[0];
+    const best = findMinBy(candidates, (c) => optimizationScore(c, item))!;
     const optItemTotal = best.price * item.quantity;
     const changed = current?.product ? best.canonicalProductId !== current.product.canonicalProductId : false;
 
@@ -608,9 +616,8 @@ export function splitCartOptimization(
 
       if (candidates.length === 0) continue;
 
-      // Sort by optimization score (accounts for promo bonus + attribute penalties)
-      candidates.sort((a, b) => optimizationScore(a, item) - optimizationScore(b, item));
-      const best = candidates[0];
+      // Find best by optimization score (accounts for promo bonus + attribute penalties)
+      const best = findMinBy(candidates, (c) => optimizationScore(c, item))!;
 
       if (best.price < bestPrice) {
         bestPrice = best.price;

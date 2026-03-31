@@ -53,6 +53,10 @@ model CanonicalProduct {
   basketItems         BasketItem[]
 
   createdAt DateTime @default(now())
+
+  @@index([categoryId])
+  @@index([barcode])
+  @@index([normalizedName])
 }
 
 model Supermarket {
@@ -147,4 +151,5 @@ model BasketItem {
   createdAt DateTime @default(now())
 
   @@index([basketId])
+  @@index([categoryId])
 }

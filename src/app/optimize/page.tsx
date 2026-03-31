@@ -269,22 +269,22 @@ function OptimizePageInner() {
   );
 }
 
-function RecommendationCard({ recommendation }: { recommendation: Recommendation }) {
-  const typeStyles: Record<string, string> = {
-    cheaper_alternative: 'bg-green-50 border-green-200 text-green-800',
-    promo: 'bg-amber-50 border-amber-200 text-amber-800',
-    constraint_relaxation: 'bg-blue-50 border-blue-200 text-blue-800',
-    quantity: 'bg-purple-50 border-purple-200 text-purple-800',
-  };
-  const typeLabels: Record<string, string> = {
-    cheaper_alternative: 'חלופה זולה יותר',
-    promo: 'מבצע',
-    constraint_relaxation: 'הרחבת קריטריון',
-    quantity: 'טיפ לכמות',
-  };
+const REC_TYPE_STYLES: Record<string, string> = {
+  cheaper_alternative: 'bg-green-50 border-green-200 text-green-800',
+  promo: 'bg-amber-50 border-amber-200 text-amber-800',
+  constraint_relaxation: 'bg-blue-50 border-blue-200 text-blue-800',
+  quantity: 'bg-purple-50 border-purple-200 text-purple-800',
+};
+const REC_TYPE_LABELS: Record<string, string> = {
+  cheaper_alternative: 'חלופה זולה יותר',
+  promo: 'מבצע',
+  constraint_relaxation: 'הרחבת קריטריון',
+  quantity: 'טיפ לכמות',
+};
 
-  const style = typeStyles[recommendation.type] ?? 'bg-gray-50 border-gray-200 text-gray-800';
-  const label = typeLabels[recommendation.type] ?? recommendation.type;
+function RecommendationCard({ recommendation }: { recommendation: Recommendation }) {
+  const style = REC_TYPE_STYLES[recommendation.type] ?? 'bg-gray-50 border-gray-200 text-gray-800';
+  const label = REC_TYPE_LABELS[recommendation.type] ?? recommendation.type;
 
   return (
     <div className={`rounded-lg border p-4 ${style}`}>

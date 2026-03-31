@@ -151,12 +151,13 @@ function resolveFlexible(
   }
 
   // Score and rank candidates
+  const preferredBrand = constraints.brand ? String(constraints.brand) : undefined;
   const scored = candidates.map((p) => ({
     product: p,
     score: scoreMatch(
       { metadata: p.canonicalProduct.metadata, brand: p.brand, price: p.price },
       constraints,
-      item.selectedCanonicalProductId ? undefined : undefined // no preferred brand in constraints for now
+      preferredBrand
     ),
   }));
 
@@ -185,13 +186,16 @@ function resolveFlexible(
 
   let substitutionReason: string | null = null;
   if (wasSubstituted) {
-    substitutionReason = buildSubstitutionReason(chosen, constraints);
+    substitutionReason = buildSubstitutionReason(chosen);
   } else if (isFlexible && !item.selectedCanonicalProductId) {
     const promoNote = chosen.isPromo ? ' (במבצע)' : '';
     substitutionReason = `האפשרות הזולה ביותר: ${chosen.externalName}${promoNote}`;
   }
 
-  const resolutionType: ResolutionType = wasSubstituted ? 'flexible_match' : 'exact';
+  const resolutionType: ResolutionType =
+    wasSubstituted || (isFlexible && !item.selectedCanonicalProductId)
+      ? 'flexible_match'
+      : 'exact';
 
   return {
     ...base,
@@ -212,8 +216,7 @@ function resolveFlexible(
 }
 
 function buildSubstitutionReason(
-  chosen: SupermarketProductForComparison,
-  _constraints: UserConstraints
+  chosen: SupermarketProductForComparison
 ): string {
   const promoNote = chosen.isPromo ? ' (במבצע)' : '';
   return `הוחלף ל${chosen.externalName}${promoNote} (חלופה זולה יותר)`;

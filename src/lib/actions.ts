@@ -88,7 +88,7 @@ export async function getBasketItems(basketId: string): Promise<BasketItemDTO[]>
     quantity: item.quantity,
     matchMode: item.matchMode as MatchMode,
     selectedCanonicalProductId: item.selectedCanonicalProductId,
-    userConstraints: JSON.parse(item.userConstraints) as UserConstraints,
+    userConstraints: safeJsonParse(item.userConstraints) as UserConstraints,
     displayName: item.displayName,
     createdAt: item.createdAt.toISOString(),
   }));
@@ -116,7 +116,7 @@ export async function addBasketItem(basketId: string, input: BasketItemInput): P
     quantity: item.quantity,
     matchMode: item.matchMode as MatchMode,
     selectedCanonicalProductId: item.selectedCanonicalProductId,
-    userConstraints: JSON.parse(item.userConstraints) as UserConstraints,
+    userConstraints: safeJsonParse(item.userConstraints) as UserConstraints,
     displayName: item.displayName,
     createdAt: item.createdAt.toISOString(),
   };
@@ -191,6 +191,115 @@ export async function loadDemoBasket(): Promise<string> {
   return basket.id;
 }
 
+// ── Shared Helpers ──
+
+type RawSupermarketProduct = Awaited<ReturnType<typeof prisma.supermarketProduct.findMany>>[number] & {
+  canonicalProduct: Awaited<ReturnType<typeof prisma.canonicalProduct.findFirst>> & Record<string, unknown>;
+  priceSnapshots: Array<{ price: number; isPromo: boolean; promoDescription: string | null; inStock: boolean; capturedAt: Date }>;
+};
+
+interface TransformedProduct {
+  id: string;
+  supermarketId: string;
+  canonicalProductId: string;
+  externalName: string;
+  brand: string | null;
+  price: number;
+  inStock: boolean;
+  isPromo: boolean;
+  promoDescription: string | null;
+  promoEndDate: string | null;
+  metadata: Record<string, unknown>;
+  priceTimestamp: string | null;
+  canonicalProduct: {
+    id: string;
+    categoryId: string;
+    name: string;
+    brand: string | null;
+    metadata: Record<string, unknown>;
+  };
+}
+
+function safeJsonParse(json: string, fallback: Record<string, unknown> = {}): Record<string, unknown> {
+  try { return JSON.parse(json) as Record<string, unknown>; }
+  catch { return fallback; }
+}
+
+function transformProduct(p: RawSupermarketProduct): TransformedProduct {
+  const snap = p.priceSnapshots[0];
+  return {
+    id: p.id,
+    supermarketId: p.supermarketId,
+    canonicalProductId: p.canonicalProductId,
+    externalName: p.externalName,
+    brand: p.brand,
+    price: snap?.price ?? p.price,
+    inStock: snap?.inStock ?? p.inStock,
+    isPromo: snap?.isPromo ?? p.isPromo,
+    promoDescription: snap?.promoDescription ?? p.promoDescription,
+    promoEndDate: (p as Record<string, unknown>).promoEndDate
+      ? ((p as Record<string, unknown>).promoEndDate as Date).toISOString()
+      : null,
+    metadata: safeJsonParse(p.metadata),
+    priceTimestamp: snap?.capturedAt?.toISOString() ?? p.updatedAt.toISOString(),
+    canonicalProduct: {
+      id: p.canonicalProduct.id,
+      categoryId: p.canonicalProduct.categoryId,
+      name: p.canonicalProduct.name,
+      brand: p.canonicalProduct.brand,
+      metadata: safeJsonParse(p.canonicalProduct.metadata),
+    },
+  };
+}
+
+const PRODUCT_INCLUDE = {
+  canonicalProduct: true,
+  priceSnapshots: { orderBy: { capturedAt: 'desc' as const }, take: 1 },
+} as const;
+
+async function fetchAllProductsGrouped() {
+  const [supermarkets, allProducts] = await Promise.all([
+    prisma.supermarket.findMany({ where: { isActive: true } }),
+    prisma.supermarketProduct.findMany({ include: PRODUCT_INCLUDE }),
+  ]);
+
+  // Group raw products by supermarket
+  const rawBySupermarket = new Map<string, RawSupermarketProduct[]>();
+  for (const p of allProducts) {
+    const list = rawBySupermarket.get(p.supermarketId) ?? [];
+    list.push(p as RawSupermarketProduct);
+    rawBySupermarket.set(p.supermarketId, list);
+  }
+
+  // Transform once, reuse everywhere
+  const transformedBySupermarket = new Map<string, TransformedProduct[]>();
+  for (const [smId, products] of rawBySupermarket) {
+    transformedBySupermarket.set(smId, products.map(transformProduct));
+  }
+
+  return { supermarkets, transformedBySupermarket };
+}
+
+function toBasketItemsForEngine(basketItems: Array<{
+  id: string;
+  categoryId: string;
+  quantity: number;
+  matchMode: string;
+  selectedCanonicalProductId: string | null;
+  userConstraints: string;
+  displayName: string;
+}>) {
+  return basketItems.map((item) => ({
+    id: item.id,
+    categoryId: item.categoryId,
+    quantity: item.quantity,
+    matchMode: item.matchMode as 'exact' | 'flexible',
+    selectedCanonicalProductId: item.selectedCanonicalProductId,
+    userConstraints: safeJsonParse(item.userConstraints) as UserConstraints,
+    displayName: item.displayName,
+  }));
+}
+
 // ── Comparison ──
 
 export async function compareBasketAction(basketId: string): Promise<ComparisonResult> {
@@ -211,39 +320,9 @@ export async function compareBasketAction(basketId: string): Promise<ComparisonR
     };
   }
 
-  const supermarkets = await prisma.supermarket.findMany({
-    where: { isActive: true },
-  });
+  const { supermarkets, transformedBySupermarket } = await fetchAllProductsGrouped();
 
-  // Fetch all supermarket products with canonical products and latest price snapshot
-  const allProducts = await prisma.supermarketProduct.findMany({
-    include: {
-      canonicalProduct: true,
-      priceSnapshots: {
-        orderBy: { capturedAt: 'desc' },
-        take: 1,
-      },
-    },
-  });
-
-  // Group by supermarket
-  const productsBySupermarket = new Map<string, typeof allProducts>();
-  for (const product of allProducts) {
-    const list = productsBySupermarket.get(product.supermarketId) ?? [];
-    list.push(product);
-    productsBySupermarket.set(product.supermarketId, list);
-  }
-
-  // Transform for comparison engine
-  const itemsForComparison = basketItems.map((item) => ({
-    id: item.id,
-    categoryId: item.categoryId,
-    quantity: item.quantity,
-    matchMode: item.matchMode as 'exact' | 'flexible',
-    selectedCanonicalProductId: item.selectedCanonicalProductId,
-    userConstraints: JSON.parse(item.userConstraints) as UserConstraints,
-    displayName: item.displayName,
-  }));
+  const itemsForComparison = toBasketItemsForEngine(basketItems);
 
   const supermarketInfos = supermarkets.map((s) => ({
     id: s.id,
@@ -252,67 +331,7 @@ export async function compareBasketAction(basketId: string): Promise<ComparisonR
     lastIngestionAt: s.lastIngestionAt?.toISOString() ?? null,
   }));
 
-  const productsMap = new Map<string, Array<{
-    id: string;
-    supermarketId: string;
-    canonicalProductId: string;
-    externalName: string;
-    brand: string | null;
-    price: number;
-    inStock: boolean;
-    isPromo: boolean;
-    promoDescription: string | null;
-    promoEndDate: string | null;
-    metadata: Record<string, unknown>;
-    priceTimestamp: string | null;
-    canonicalProduct: {
-      id: string;
-      categoryId: string;
-      name: string;
-      brand: string | null;
-      metadata: Record<string, unknown>;
-    };
-  }>>();
-
-  for (const [smId, products] of productsBySupermarket) {
-    productsMap.set(
-      smId,
-      products.map((p) => {
-        // Use latest snapshot price if available, otherwise cached price
-        const latestSnapshot = p.priceSnapshots[0];
-        const price = latestSnapshot?.price ?? p.price;
-        const isPromo = latestSnapshot?.isPromo ?? p.isPromo;
-        const promoDescription = latestSnapshot?.promoDescription ?? p.promoDescription;
-        const promoEndDate = p.promoEndDate?.toISOString() ?? null;
-        const inStock = latestSnapshot?.inStock ?? p.inStock;
-        const priceTimestamp = latestSnapshot?.capturedAt?.toISOString() ?? p.updatedAt.toISOString();
-
-        return {
-          id: p.id,
-          supermarketId: p.supermarketId,
-          canonicalProductId: p.canonicalProductId,
-          externalName: p.externalName,
-          brand: p.brand,
-          price,
-          inStock,
-          isPromo,
-          promoDescription,
-          promoEndDate,
-          metadata: JSON.parse(p.metadata) as Record<string, unknown>,
-          priceTimestamp,
-          canonicalProduct: {
-            id: p.canonicalProduct.id,
-            categoryId: p.canonicalProduct.categoryId,
-            name: p.canonicalProduct.name,
-            brand: p.canonicalProduct.brand,
-            metadata: JSON.parse(p.canonicalProduct.metadata) as Record<string, unknown>,
-          },
-        };
-      })
-    );
-  }
-
-  const result = compareBasket(itemsForComparison, supermarketInfos, productsMap);
+  const result = compareBasket(itemsForComparison, supermarketInfos, transformedBySupermarket);
   result.basketId = basketId;
 
   const durationMs = Date.now() - startTime;
@@ -330,91 +349,56 @@ export async function compareBasketAction(basketId: string): Promise<ComparisonR
 
 export async function optimizeBasketAction(basketId: string): Promise<OptimizationResult> {
   const startTime = Date.now();
+  const emptyResult: OptimizationResult = {
+    basketId,
+    supermarketId: '',
+    supermarketName: '',
+    originalTotal: 0,
+    optimizedTotal: 0,
+    savings: 0,
+    savingsPercentage: 0,
+    items: [],
+    recommendations: [],
+  };
 
   const basketItems = await prisma.basketItem.findMany({
     where: { basketId },
     include: { category: true },
   });
 
-  if (basketItems.length === 0) {
-    return {
-      basketId,
-      supermarketId: '',
-      supermarketName: '',
-      originalTotal: 0,
-      optimizedTotal: 0,
-      savings: 0,
-      savingsPercentage: 0,
-      items: [],
-      recommendations: [],
-    };
-  }
+  if (basketItems.length === 0) return emptyResult;
 
-  // Run comparison first to find the best supermarket
-  const comparisonResult = await compareBasketAction(basketId);
+  // Single fetch: all supermarkets + all products (reused for compare, optimize, and split-cart)
+  const { supermarkets, transformedBySupermarket } = await fetchAllProductsGrouped();
+
+  const itemsForEngine = toBasketItemsForEngine(basketItems);
+
+  // Run comparison inline (no second DB fetch)
+  const supermarketInfos = supermarkets.map((s) => ({
+    id: s.id,
+    name: s.name,
+    slug: s.slug,
+    lastIngestionAt: s.lastIngestionAt?.toISOString() ?? null,
+  }));
+
+  const comparisonResult = compareBasket(itemsForEngine, supermarketInfos, transformedBySupermarket);
+
   if (!comparisonResult.bestSupermarketId || comparisonResult.comparisons.length === 0) {
-    return {
-      basketId,
-      supermarketId: '',
-      supermarketName: '',
-      originalTotal: 0,
-      optimizedTotal: 0,
-      savings: 0,
-      savingsPercentage: 0,
-      items: [],
-      recommendations: [],
-    };
+    return emptyResult;
   }
 
   const bestComparison = comparisonResult.comparisons.find(
     (c) => c.supermarketId === comparisonResult.bestSupermarketId
-  )!;
+  );
+  if (!bestComparison) return emptyResult;
 
-  const supermarket = await prisma.supermarket.findUnique({
-    where: { id: comparisonResult.bestSupermarketId },
-  });
+  const supermarket = supermarkets.find((s) => s.id === comparisonResult.bestSupermarketId);
+  if (!supermarket) throw new Error(`Supermarket ${comparisonResult.bestSupermarketId} not found`);
 
-  if (!supermarket) {
-    throw new Error('Supermarket not found');
-  }
-
-  // Fetch all products for this supermarket
-  const smProducts = await prisma.supermarketProduct.findMany({
-    where: { supermarketId: supermarket.id },
-    include: {
-      canonicalProduct: true,
-      priceSnapshots: {
-        orderBy: { capturedAt: 'desc' },
-        take: 1,
-      },
-    },
-  });
-
-  const products = smProducts.map((p) => {
-    const latestSnapshot = p.priceSnapshots[0];
-    return {
-      id: p.id,
-      supermarketId: p.supermarketId,
-      canonicalProductId: p.canonicalProductId,
-      externalName: p.externalName,
-      brand: p.brand,
-      price: latestSnapshot?.price ?? p.price,
-      inStock: latestSnapshot?.inStock ?? p.inStock,
-      isPromo: latestSnapshot?.isPromo ?? p.isPromo,
-      promoDescription: latestSnapshot?.promoDescription ?? p.promoDescription,
-      promoEndDate: p.promoEndDate?.toISOString() ?? null,
-      canonicalProduct: {
-        id: p.canonicalProduct.id,
-        categoryId: p.canonicalProduct.categoryId,
-        name: p.canonicalProduct.name,
-        brand: p.canonicalProduct.brand,
-        metadata: JSON.parse(p.canonicalProduct.metadata) as Record<string, unknown>,
-      },
-    };
-  });
+  const products = transformedBySupermarket.get(supermarket.id) ?? [];
 
   // Build current resolutions from the comparison result
-  const currentResolutions = new Map<string, { product: (typeof products)[number] | null; unitPrice: number }>();
+  const currentResolutions = new Map<string, { product: TransformedProduct | null; unitPrice: number }>();
   for (const itemResult of bestComparison.itemResults) {
     const matchedProduct = itemResult.supermarketProductId
       ? products.find((p) => p.id === itemResult.supermarketProductId) ?? null
@@ -425,69 +409,23 @@ export async function optimizeBasketAction(basketId: string): Promise<Optimizati
     });
   }
 
-  const itemsForOptimization = basketItems.map((item) => ({
-    id: item.id,
-    categoryId: item.categoryId,
-    quantity: item.quantity,
-    matchMode: item.matchMode as 'exact' | 'flexible',
-    selectedCanonicalProductId: item.selectedCanonicalProductId,
-    userConstraints: JSON.parse(item.userConstraints) as UserConstraints,
-    displayName: item.displayName,
-  }));
-
   const result = optimizeBasketEngine(
-    itemsForOptimization,
+    itemsForEngine,
     products,
     { id: supermarket.id, name: supermarket.name, slug: supermarket.slug },
     currentResolutions
   );
   result.basketId = basketId;
 
-  // Run split-cart optimization across all supermarkets
-  const allSupermarkets = await prisma.supermarket.findMany({
-    where: { isActive: true },
-  });
-
-  if (allSupermarkets.length >= 2) {
-    const allSmProducts = await Promise.all(
-      allSupermarkets.map(async (sm) => {
-        const smProds = await prisma.supermarketProduct.findMany({
-          where: { supermarketId: sm.id },
-          include: {
-            canonicalProduct: true,
-            priceSnapshots: { orderBy: { capturedAt: 'desc' }, take: 1 },
-          },
-        });
-        return {
-          supermarket: { id: sm.id, name: sm.name, slug: sm.slug },
-          products: smProds.map((p) => {
-            const snap = p.priceSnapshots[0];
-            return {
-              id: p.id,
-              supermarketId: p.supermarketId,
-              canonicalProductId: p.canonicalProductId,
-              externalName: p.externalName,
-              brand: p.brand,
-              price: snap?.price ?? p.price,
-              inStock: snap?.inStock ?? p.inStock,
-              isPromo: snap?.isPromo ?? p.isPromo,
-              promoDescription: snap?.promoDescription ?? p.promoDescription,
-              promoEndDate: p.promoEndDate?.toISOString() ?? null,
-              canonicalProduct: {
-                id: p.canonicalProduct.id,
-                categoryId: p.canonicalProduct.categoryId,
-                name: p.canonicalProduct.name,
-                brand: p.canonicalProduct.brand,
-                metadata: JSON.parse(p.canonicalProduct.metadata) as Record<string, unknown>,
-              },
-            };
-          }),
-        };
-      })
-    );
+  // Split-cart optimization reuses already-fetched data
+  if (supermarkets.length >= 2) {
+    const allSmProducts = supermarkets.map((sm) => ({
+      supermarket: { id: sm.id, name: sm.name, slug: sm.slug },
+      products: transformedBySupermarket.get(sm.id) ?? [],
+    }));
 
     result.splitCart = splitCartOptimization(
-      itemsForOptimization,
+      itemsForEngine,
       allSmProducts,
       result.optimizedTotal
     );
@@ -545,7 +483,7 @@ export async function quickAddToBasket(
     quantity: item.quantity,
     matchMode: item.matchMode as MatchMode,
     selectedCanonicalProductId: item.selectedCanonicalProductId,
-    userConstraints: JSON.parse(item.userConstraints) as UserConstraints,
+    userConstraints: safeJsonParse(item.userConstraints) as UserConstraints,
     displayName: item.displayName,
     createdAt: item.createdAt.toISOString(),
   };
@@ -560,57 +498,67 @@ export async function getItemPriceRanges(
     where: { basketId },
   });
 
+  if (basketItems.length === 0) return {};
+
+  // Collect all category IDs and canonical product IDs needed
+  const categoryIds = new Set<string>();
+  const canonicalProductIds = new Set<string>();
+  for (const item of basketItems) {
+    if (item.matchMode === 'exact' && item.selectedCanonicalProductId) {
+      canonicalProductIds.add(item.selectedCanonicalProductId);
+    } else {
+      categoryIds.add(item.categoryId);
+    }
+  }
+
+  // Single batched query for all products across all basket items
+  const allProducts = await prisma.supermarketProduct.findMany({
+    where: {
+      inStock: true,
+      OR: [
+        ...(categoryIds.size > 0 ? [{ canonicalProduct: { categoryId: { in: [...categoryIds] } } }] : []),
+        ...(canonicalProductIds.size > 0 ? [{ canonicalProduct: { id: { in: [...canonicalProductIds] } } }] : []),
+      ],
+    },
+    select: {
+      price: true,
+      supermarketId: true,
+      canonicalProductId: true,
+      canonicalProduct: { select: { categoryId: true } },
+      priceSnapshots: {
+        orderBy: { capturedAt: 'desc' },
+        take: 1,
+        select: { price: true, inStock: true },
+      },
+    },
+  });
+
+  // Build index: categoryId → products, and canonicalProductId → products
   const result: Record<string, { min: number; max: number; count: number } | null> = {};
 
   for (const item of basketItems) {
-    let whereClause: { canonicalProduct: { categoryId?: string; id?: string }; inStock: boolean };
-
-    if (item.matchMode === 'exact' && item.selectedCanonicalProductId) {
-      whereClause = {
-        canonicalProduct: { id: item.selectedCanonicalProductId },
-        inStock: true,
-      };
-    } else {
-      whereClause = {
-        canonicalProduct: { categoryId: item.categoryId },
-        inStock: true,
-      };
-    }
-
-    const products = await prisma.supermarketProduct.findMany({
-      where: whereClause,
-      select: {
-        price: true,
-        supermarketId: true,
-        priceSnapshots: {
-          orderBy: { capturedAt: 'desc' },
-          take: 1,
-          select: { price: true, inStock: true },
-        },
-      },
-    });
-
-    const prices: number[] = [];
+    const isExact = item.matchMode === 'exact' && item.selectedCanonicalProductId;
+    let min = Infinity;
+    let max = -Infinity;
     const supermarketIds = new Set<string>();
 
-    for (const p of products) {
+    for (const p of allProducts) {
+      // Match product to basket item
+      if (isExact) {
+        if (p.canonicalProductId !== item.selectedCanonicalProductId) continue;
+      } else {
+        if (p.canonicalProduct.categoryId !== item.categoryId) continue;
+      }
+
       const snapshot = p.priceSnapshots[0];
-      const inStock = snapshot?.inStock ?? true;
-      if (!inStock) continue;
+      if (snapshot && !snapshot.inStock) continue;
       const price = snapshot?.price ?? p.price;
-      prices.push(price);
+      if (price < min) min = price;
+      if (price > max) max = price;
       supermarketIds.add(p.supermarketId);
     }
 
-    if (prices.length === 0) {
-      result[item.id] = null;
-    } else {
-      result[item.id] = {
-        min: Math.min(...prices),
-        max: Math.max(...prices),
-        count: supermarketIds.size,
-      };
-    }
+    result[item.id] = min === Infinity ? null : { min, max, count: supermarketIds.size };
   }
 
   return result;
