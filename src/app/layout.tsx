@@ -5,6 +5,7 @@ import { Header } from '@/components/Header';
 import { ServiceWorkerRegistrar } from '@/components/ServiceWorkerRegistrar';
 import { LocaleProvider } from '@/lib/i18n/context';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import OnboardingTour from '@/components/OnboardingTour';
 
 export const metadata: Metadata = {
   title: 'סל חכם - השוואת מחירי מצרכים',
@@ -45,6 +46,7 @@ export default function RootLayout({
               </main>
             </div>
           </ToastProvider>
+          <OnboardingTour />
         </LocaleProvider>
       </body>
     </html>

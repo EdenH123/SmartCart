@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { BarChart3, ArrowRight, ShoppingCart, TrendingDown, Tag, DollarSign, Loader2, AlertTriangle } from 'lucide-react';
-import { getOrCreateBasket, getSpendingAnalytics } from '@/lib/actions';
+import { getOrCreateBasket, getSpendingAnalytics, getCostHistory } from '@/lib/actions';
 import { formatPrice } from '@/lib/utils';
-import type { SpendingAnalytics } from '@/types';
+import CostHistoryChart from '@/components/CostHistoryChart';
+import type { SpendingAnalytics, CostHistory } from '@/types';
 
 const CATEGORY_COLORS = [
   '#25a768', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6',
@@ -14,6 +15,7 @@ const CATEGORY_COLORS = [
 
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<SpendingAnalytics | null>(null);
+  const [costHistory, setCostHistory] = useState<CostHistory | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,8 +23,12 @@ export default function AnalyticsPage() {
     async function load() {
       try {
         const basketId = await getOrCreateBasket();
-        const data = await getSpendingAnalytics(basketId);
+        const [data, history] = await Promise.all([
+          getSpendingAnalytics(basketId),
+          getCostHistory(basketId),
+        ]);
         setAnalytics(data);
+        setCostHistory(history);
       } catch {
         setError('לא ניתן לטעון נתוני ניתוח. נסו שוב.');
       }
@@ -126,9 +132,23 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
+      {/* Cost history chart */}
+      {costHistory && costHistory.points.length > 0 && (
+        <div className="card p-6 mb-8 animate-slide-up" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-5 flex items-center gap-2">
+            <TrendingDown className="h-5 w-5 text-brand-500" />
+            היסטוריית עלויות
+          </h2>
+          <p className="text-xs text-gray-500 mb-4">
+            העלות הזולה ביותר של הסל לאורך זמן ({costHistory.basketItemCount} פריטים)
+          </p>
+          <CostHistoryChart data={costHistory} />
+        </div>
+      )}
+
       {/* Cost by supermarket */}
       {analytics.supermarketCosts.length > 0 && (
-        <div className="card p-6 mb-8 animate-slide-up" style={{ animationDelay: '240ms', animationFillMode: 'backwards' }}>
+        <div className="card p-6 mb-8 animate-slide-up" style={{ animationDelay: '280ms', animationFillMode: 'backwards' }}>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-5">עלות לפי סופרמרקט</h2>
           <div className="space-y-4">
             {analytics.supermarketCosts.map((sm, idx) => {
@@ -168,7 +188,7 @@ export default function AnalyticsPage() {
 
       {/* Category breakdown */}
       {analytics.categoryBreakdown.length > 0 && (
-        <div className="card p-6 mb-8 animate-slide-up" style={{ animationDelay: '320ms', animationFillMode: 'backwards' }}>
+        <div className="card p-6 mb-8 animate-slide-up" style={{ animationDelay: '360ms', animationFillMode: 'backwards' }}>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-5">התפלגות לפי קטגוריה</h2>
           <div className="flex flex-col sm:flex-row items-center gap-8">
             <div
@@ -204,7 +224,7 @@ export default function AnalyticsPage() {
 
       {/* Savings opportunities */}
       {analytics.savingsOpportunities.length > 0 && (
-        <div className="card p-6 animate-slide-up" style={{ animationDelay: '400ms', animationFillMode: 'backwards' }}>
+        <div className="card p-6 animate-slide-up" style={{ animationDelay: '440ms', animationFillMode: 'backwards' }}>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-5 flex items-center gap-2">
             <Tag className="h-5 w-5 text-amber-500" />
             הזדמנויות חיסכון
