@@ -14,7 +14,7 @@ export default function BreakdownPage() {
       <div className="mx-auto max-w-3xl px-4 py-16">
         <div className="animate-pulse space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 rounded-xl bg-gray-200" />
+            <div key={i} className="h-24 rounded-2xl bg-gray-200" />
           ))}
         </div>
       </div>
@@ -48,7 +48,7 @@ function BreakdownPageInner() {
       <div className="mx-auto max-w-3xl px-4 py-16">
         <div className="animate-pulse space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 rounded-xl bg-gray-200" />
+            <div key={i} className="h-24 rounded-2xl bg-gray-200" />
           ))}
         </div>
       </div>
@@ -58,7 +58,9 @@ function BreakdownPageInner() {
   if (!comparison) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 text-center">
-        <AlertTriangle className="mx-auto h-12 w-12 text-amber-500" />
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50">
+          <AlertTriangle className="h-7 w-7 text-amber-500" />
+        </div>
         <h2 className="mt-4 text-lg font-semibold">סופרמרקט לא נמצא</h2>
         <Link href={`/compare?basketId=${basketId}`} className="btn-primary mt-6 inline-flex">
           חזרה להשוואה
@@ -71,7 +73,7 @@ function BreakdownPageInner() {
     <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8">
       <Link
         href={`/compare?basketId=${basketId}`}
-        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6"
+        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors mb-6"
       >
         <ArrowRight className="h-4 w-4" />
         חזרה להשוואה
@@ -91,7 +93,7 @@ function BreakdownPageInner() {
           </div>
         </div>
         <div className="text-right">
-          <p className="text-3xl font-bold text-gray-900">{formatPrice(comparison.total)}</p>
+          <p className="text-3xl font-bold text-gray-900 tabular-nums">{formatPrice(comparison.total)}</p>
           <div className="mt-1 flex gap-2 justify-end">
             {comparison.unavailableCount > 0 && (
               <span className="badge-unavailable text-xs">{comparison.unavailableCount} לא זמין</span>
@@ -110,10 +112,10 @@ function BreakdownPageInner() {
       </div>
 
       {/* Total */}
-      <div className="mt-6 card p-4">
+      <div className="mt-6 card p-5 bg-gray-50">
         <div className="flex items-center justify-between">
           <span className="text-lg font-semibold text-gray-900">סה״כ</span>
-          <span className="text-2xl font-bold text-gray-900">{formatPrice(comparison.total)}</span>
+          <span className="text-2xl font-bold text-gray-900 tabular-nums">{formatPrice(comparison.total)}</span>
         </div>
       </div>
     </div>
@@ -150,7 +152,7 @@ function ItemRow({ item }: { item: ItemResolution }) {
 
           {/* Requested vs resolved */}
           {item.wasSubstituted && (
-            <div className="mt-2 ml-8 rounded-lg bg-purple-50 p-2.5 text-xs">
+            <div className="mt-2 ml-8 rounded-xl bg-purple-50 p-2.5 text-xs">
               <p className="text-purple-700">
                 <span className="font-medium">המבוקש:</span> {item.requestedDisplayName}
               </p>
@@ -162,7 +164,7 @@ function ItemRow({ item }: { item: ItemResolution }) {
 
           {/* Unavailable reason */}
           {isUnavailable && item.substitutionReason && (
-            <div className="mt-2 ml-8 rounded-lg bg-red-50 p-2.5 text-xs text-red-600">
+            <div className="mt-2 ml-8 rounded-xl bg-red-50 p-2.5 text-xs text-red-600">
               {item.substitutionReason}
             </div>
           )}

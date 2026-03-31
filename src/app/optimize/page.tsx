@@ -22,17 +22,17 @@ export default function OptimizePage() {
     <Suspense
       fallback={
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 animate-pulse">
-          <div className="h-4 w-20 rounded bg-gray-200 mb-6" />
-          <div className="rounded-xl bg-brand-50 p-6 text-center">
-            <div className="mx-auto h-12 w-12 rounded-full bg-brand-100" />
-            <div className="mx-auto mt-3 h-5 w-40 rounded bg-brand-100" />
+          <div className="h-4 w-20 rounded-lg bg-gray-200 mb-6" />
+          <div className="rounded-2xl bg-brand-50 p-6 text-center">
+            <div className="mx-auto h-12 w-12 rounded-2xl bg-brand-100" />
+            <div className="mx-auto mt-3 h-5 w-40 rounded-lg bg-brand-100" />
           </div>
           <div className="mt-6 space-y-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="card p-4">
                 <div className="flex items-center justify-between">
-                  <div className="h-5 w-36 rounded bg-gray-200" />
-                  <div className="h-5 w-16 rounded bg-gray-200" />
+                  <div className="h-5 w-36 rounded-lg bg-gray-200" />
+                  <div className="h-5 w-16 rounded-lg bg-gray-200" />
                 </div>
               </div>
             ))}
@@ -74,11 +74,11 @@ function OptimizePageInner() {
     return (
       <div className="mx-auto max-w-4xl px-4 py-16 text-center">
         <div className="animate-pulse">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-100">
-            <Sparkles className="h-6 w-6 text-brand-500 animate-pulse" />
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-100">
+            <Sparkles className="h-7 w-7 text-brand-500 animate-pulse" />
           </div>
           <p className="mt-4 text-sm font-medium text-gray-500">ממטב את הסל שלכם...</p>
-          <div className="mx-auto mt-2 h-4 w-64 rounded bg-gray-200" />
+          <div className="mx-auto mt-2 h-4 w-64 rounded-lg bg-gray-200" />
         </div>
       </div>
     );
@@ -87,7 +87,9 @@ function OptimizePageInner() {
   if (error || !result) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-16 text-center">
-        <AlertTriangle className="mx-auto h-12 w-12 text-amber-500" />
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50">
+          <AlertTriangle className="h-7 w-7 text-amber-500" />
+        </div>
         <h2 className="mt-4 text-lg font-semibold text-gray-900">משהו השתבש</h2>
         <p className="mt-2 text-sm text-gray-500">{error ?? 'Unknown error'}</p>
         <Link href="/basket" className="btn-primary mt-6 inline-flex">
@@ -109,21 +111,19 @@ function OptimizePageInner() {
     );
   }
 
-  const hasChanges = result.items.some((i) => i.changed);
-
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
       <Link
         href="/basket"
-        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-6"
+        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors mb-6"
       >
         <ArrowRight className="h-4 w-4" />
         חזרה לסל
       </Link>
 
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100">
-          <Sparkles className="h-5 w-5 text-brand-600" />
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 shadow-sm">
+          <Sparkles className="h-5 w-5 text-white" />
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">אופטימיזציית סל</h1>
@@ -135,26 +135,40 @@ function OptimizePageInner() {
 
       {/* Savings banner */}
       {result.savings > 0 ? (
-        <div className="mt-6 rounded-lg bg-green-50 border border-green-200 p-4">
-          <div className="flex items-center gap-3">
-            <TrendingDown className="h-6 w-6 text-green-600 shrink-0" />
+        <div className="savings-banner-positive mt-6">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-green-100">
+              <TrendingDown className="h-6 w-6 text-green-600" />
+            </div>
             <div>
-              <p className="font-semibold text-green-800">
-                חסכו {formatPrice(result.savings)} ({result.savingsPercentage}%)
+              <p className="text-lg font-bold text-green-800">
+                חסכו {formatPrice(result.savings)}
               </p>
               <p className="text-sm text-green-700">
-                מקורי: {formatPrice(result.originalTotal)} ← ממוטב:{' '}
+                {result.savingsPercentage}% הנחה · מקורי: {formatPrice(result.originalTotal)} ← ממוטב:{' '}
                 {formatPrice(result.optimizedTotal)}
               </p>
             </div>
           </div>
+          {/* Savings bar visualization */}
+          <div className="mt-4 flex items-center gap-3">
+            <div className="flex-1 h-2.5 rounded-full bg-green-100 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-l from-green-500 to-green-400 transition-all duration-1000"
+                style={{ width: `${Math.min(100, result.savingsPercentage)}%` }}
+              />
+            </div>
+            <span className="text-sm font-bold text-green-700 tabular-nums">{result.savingsPercentage}%</span>
+          </div>
         </div>
       ) : (
-        <div className="mt-6 rounded-lg bg-gray-50 border border-gray-200 p-4">
+        <div className="savings-banner-neutral mt-6">
           <div className="flex items-center gap-3">
-            <CheckCircle className="h-6 w-6 text-gray-500 shrink-0" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100">
+              <CheckCircle className="h-5 w-5 text-gray-500" />
+            </div>
             <p className="text-sm text-gray-600">
-              הסל שלכם כבר ממוטב! סה״כ: {formatPrice(result.originalTotal)}
+              הסל שלכם כבר ממוטב! סה״כ: <strong>{formatPrice(result.originalTotal)}</strong>
             </p>
           </div>
         </div>
@@ -194,20 +208,20 @@ function OptimizePageInner() {
                 <div className="text-right ml-4 shrink-0">
                   {item.changed ? (
                     <>
-                      <p className="text-sm font-semibold text-gray-900">
+                      <p className="text-sm font-semibold text-gray-900 tabular-nums">
                         {formatPrice(item.optimizedTotal)}
                       </p>
-                      <p className="text-xs text-gray-400 line-through">
+                      <p className="text-xs text-gray-400 line-through tabular-nums">
                         {formatPrice(item.originalTotal)}
                       </p>
                     </>
                   ) : (
-                    <p className="text-sm font-semibold text-gray-900">
+                    <p className="text-sm font-semibold text-gray-900 tabular-nums">
                       {formatPrice(item.optimizedTotal)}
                     </p>
                   )}
                   {item.quantity > 1 && (
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-gray-400 tabular-nums">
                       {formatPrice(item.optimizedUnitPrice)} x {item.quantity}
                     </p>
                   )}
@@ -219,15 +233,15 @@ function OptimizePageInner() {
       </div>
 
       {/* Total */}
-      <div className="mt-6 card p-4 bg-gray-50">
+      <div className="mt-6 card p-5 bg-gray-50">
         <div className="flex items-center justify-between">
           <span className="font-semibold text-gray-700">סה״כ ממוטב</span>
           <div className="text-right">
-            <span className="text-xl font-bold text-gray-900">
+            <span className="text-2xl font-bold text-gray-900 tabular-nums">
               {formatPrice(result.optimizedTotal)}
             </span>
             {result.savings > 0 && (
-              <p className="text-xs text-green-600">
+              <p className="text-xs font-medium text-green-600">
                 אתם חוסכים {formatPrice(result.savings)}
               </p>
             )}
@@ -239,7 +253,9 @@ function OptimizePageInner() {
       {result.recommendations.length > 0 && (
         <div className="mt-8">
           <div className="flex items-center gap-2">
-            <Lightbulb className="h-5 w-5 text-amber-500" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50">
+              <Lightbulb className="h-4 w-4 text-amber-500" />
+            </div>
             <h2 className="text-lg font-semibold text-gray-900">המלצות</h2>
           </div>
           <div className="mt-3 space-y-3">
@@ -259,7 +275,7 @@ function OptimizePageInner() {
       <div className="mt-8 flex gap-3">
         <Link
           href={`/compare?basketId=${basketId}`}
-          className="btn-primary flex-1 gap-2 py-3 justify-center"
+          className="btn-primary flex-1 gap-2 py-3.5 justify-center shadow-md"
         >
           צפו בהשוואה מלאה
           <ArrowRight className="h-4 w-4" />
@@ -287,18 +303,18 @@ function RecommendationCard({ recommendation }: { recommendation: Recommendation
   const label = REC_TYPE_LABELS[recommendation.type] ?? recommendation.type;
 
   return (
-    <div className={`rounded-lg border p-4 ${style}`}>
+    <div className={`rounded-2xl border p-4 ${style}`}>
       <div className="flex items-start justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold uppercase opacity-70">{label}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider opacity-70">{label}</span>
           </div>
           <p className="mt-1 font-medium">{recommendation.title}</p>
           <p className="mt-0.5 text-sm opacity-80">{recommendation.description}</p>
         </div>
         {recommendation.impact.savingsAmount > 0 && (
           <div className="mr-4 shrink-0 text-right">
-            <p className="text-lg font-bold">-{formatPrice(recommendation.impact.savingsAmount)}</p>
+            <p className="text-lg font-bold tabular-nums">-{formatPrice(recommendation.impact.savingsAmount)}</p>
             <p className="text-xs opacity-70">{recommendation.impact.percentage}% הנחה</p>
           </div>
         )}
@@ -311,7 +327,9 @@ function SplitCartSection({ splitCart }: { splitCart: SplitCartResult }) {
   return (
     <div className="mt-8">
       <div className="flex items-center gap-2">
-        <Split className="h-5 w-5 text-brand-600" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-50">
+          <Split className="h-4 w-4 text-brand-600" />
+        </div>
         <h2 className="text-lg font-semibold text-gray-900">פיצול סל בין סופרמרקטים</h2>
       </div>
       <p className="mt-1 text-sm text-gray-500">
@@ -321,16 +339,16 @@ function SplitCartSection({ splitCart }: { splitCart: SplitCartResult }) {
       {/* Supermarket breakdown */}
       <div className="mt-4 flex flex-wrap gap-3">
         {splitCart.supermarketBreakdown.map((sm) => (
-          <div key={sm.supermarketId} className="card p-3 flex-1 min-w-[140px]">
+          <div key={sm.supermarketId} className="card-hover p-4 flex-1 min-w-[140px]">
             <p className="font-medium text-gray-900 text-sm">{sm.supermarketName}</p>
             <p className="text-xs text-gray-500">{sm.itemCount} פריטים</p>
-            <p className="mt-1 text-base font-bold text-gray-900">{formatPrice(sm.subtotal)}</p>
+            <p className="mt-1.5 text-lg font-bold text-gray-900 tabular-nums">{formatPrice(sm.subtotal)}</p>
           </div>
         ))}
       </div>
 
       {/* Per-item breakdown */}
-      <div className="mt-4 card divide-y">
+      <div className="mt-4 card divide-y overflow-hidden">
         {splitCart.items.map((item) => (
           <div key={item.basketItemId} className="flex items-center justify-between px-4 py-2.5 text-sm">
             <div className="min-w-0 flex-1">
@@ -350,14 +368,14 @@ function SplitCartSection({ splitCart }: { splitCart: SplitCartResult }) {
                 );
               })()}
             </div>
-            <span className="font-medium text-gray-900 whitespace-nowrap">{formatPrice(item.totalPrice)}</span>
+            <span className="font-medium text-gray-900 whitespace-nowrap tabular-nums">{formatPrice(item.totalPrice)}</span>
           </div>
         ))}
       </div>
 
-      <div className="mt-3 flex items-center justify-between rounded-lg bg-brand-50 p-3">
-        <span className="text-sm font-medium text-brand-800">סה״כ עם פיצול סל</span>
-        <span className="text-lg font-bold text-brand-800">{formatPrice(splitCart.totalCost)}</span>
+      <div className="mt-3 flex items-center justify-between rounded-2xl bg-gradient-to-l from-brand-50 to-brand-100/50 p-4">
+        <span className="text-sm font-semibold text-brand-800">סה״כ עם פיצול סל</span>
+        <span className="text-lg font-bold text-brand-800 tabular-nums">{formatPrice(splitCart.totalCost)}</span>
       </div>
     </div>
   );

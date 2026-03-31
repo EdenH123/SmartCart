@@ -18,33 +18,46 @@
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    @apply bg-gray-50/80 text-gray-900 antialiased;
+    background-image: radial-gradient(ellipse at top, rgb(238 251 243 / 0.4) 0%, transparent 50%);
+    background-attachment: fixed;
   }
 }
 
 @layer components {
+  /* ─── Buttons ─── */
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-brand-700 hover:shadow-md hover:-translate-y-px active:translate-y-0 active:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-sm;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 transition-all duration-200 hover:bg-gray-50 hover:ring-gray-300 hover:shadow-md hover:-translate-y-px active:translate-y-0 active:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0;
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-700 transition-all duration-200 hover:bg-gray-100 active:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-danger {
-    @apply inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-red-700 hover:shadow-md hover:-translate-y-px active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
+  /* ─── Cards ─── */
   .card {
-    @apply rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5;
+    @apply rounded-2xl bg-white shadow-card ring-1 ring-gray-950/[0.04] transition-all duration-200;
   }
 
+  .card-hover {
+    @apply card hover:shadow-card-hover hover:-translate-y-0.5;
+  }
+
+  .card-interactive {
+    @apply card hover:shadow-card-hover hover:-translate-y-0.5 cursor-pointer active:translate-y-0 active:shadow-card;
+  }
+
+  /* ─── Badges ─── */
   .badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
   }
 
   .badge-exact {
@@ -71,22 +84,69 @@
     @apply badge bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-600/20;
   }
 
-  .supermarket-shufersal { border-right: 4px solid #e31e24; } /* Shufersal red */
-  .supermarket-rami-levy { border-right: 4px solid #003da5; } /* Rami Levy blue */
-  .supermarket-yochananof { border-right: 4px solid #00a651; } /* Yochananof green */
+  /* ─── Inputs ─── */
+  .input {
+    @apply w-full rounded-xl border border-gray-200 bg-white py-2.5 px-4 text-sm shadow-sm transition-all duration-200 placeholder:text-gray-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:shadow-glow-brand;
+  }
+
+  .select {
+    @apply input appearance-none cursor-pointer;
+  }
+
+  /* ─── Supermarket brand borders ─── */
+  .supermarket-shufersal { border-right: 4px solid #e31e24; }
+  .supermarket-rami-levy { border-right: 4px solid #003da5; }
+  .supermarket-yochananof { border-right: 4px solid #00a651; }
+
+  /* ─── Step indicator ─── */
+  .step-dot {
+    @apply h-2 w-2 rounded-full transition-all duration-300;
+  }
+  .step-dot-active {
+    @apply step-dot bg-brand-600 w-6;
+  }
+  .step-dot-inactive {
+    @apply step-dot bg-gray-300;
+  }
+  .step-dot-completed {
+    @apply step-dot bg-brand-300;
+  }
+
+  /* ─── Chip / pill buttons ─── */
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3.5 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:hover:border-gray-200 disabled:hover:bg-white disabled:hover:text-gray-700 disabled:hover:shadow-sm;
+  }
+
+  /* ─── Savings highlight ─── */
+  .savings-banner {
+    @apply rounded-2xl border p-5 transition-all duration-200;
+  }
+  .savings-banner-positive {
+    @apply savings-banner border-green-200 bg-gradient-to-l from-green-50 to-green-50/50;
+  }
+  .savings-banner-neutral {
+    @apply savings-banner border-gray-200 bg-gray-50;
+  }
 }
 
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(1rem);
+/* ─── Scrollbar styling ─── */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(209 213 219) transparent;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
   }
-}
-
-.animate-slide-up {
-  animation: slide-up 0.25s ease-out;
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgb(209 213 219);
+    border-radius: 3px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(156 163 175);
+  }
 }
