@@ -112,6 +112,45 @@ async function main() {
     data: { name: 'חומוס', slug: 'hummus' },
   });
 
+  // ── New Categories (full Shufersal coverage) ──
+  const chocolate = await prisma.productCategory.create({ data: { name: 'שוקולד', slug: 'chocolate' } });
+  const cookies = await prisma.productCategory.create({ data: { name: 'עוגיות וביסקוויטים', slug: 'cookies' } });
+  const cakes = await prisma.productCategory.create({ data: { name: 'עוגות ומאפים', slug: 'cakes' } });
+  const wine = await prisma.productCategory.create({ data: { name: 'יין', slug: 'wine' } });
+  const beer = await prisma.productCategory.create({ data: { name: 'בירה', slug: 'beer' } });
+  const softDrinks = await prisma.productCategory.create({ data: { name: 'משקאות קלים', slug: 'soft-drinks' } });
+  const water = await prisma.productCategory.create({ data: { name: 'מים', slug: 'water' } });
+  const juice = await prisma.productCategory.create({ data: { name: 'מיצים', slug: 'juice' } });
+  const tea = await prisma.productCategory.create({ data: { name: 'תה וחליטות', slug: 'tea' } });
+  const hairCare = await prisma.productCategory.create({ data: { name: 'טיפוח שיער', slug: 'hair-care' } });
+  const soapBody = await prisma.productCategory.create({ data: { name: 'סבון ורחצה', slug: 'soap-body' } });
+  const deli = await prisma.productCategory.create({ data: { name: 'נקניקים ומעדני בשר', slug: 'deli' } });
+  const fruits = await prisma.productCategory.create({ data: { name: 'פירות', slug: 'fruits' } });
+  const vegetables = await prisma.productCategory.create({ data: { name: 'ירקות', slug: 'vegetables' } });
+  const spices = await prisma.productCategory.create({ data: { name: 'תבלינים', slug: 'spices' } });
+  const soup = await prisma.productCategory.create({ data: { name: 'מרקים', slug: 'soup' } });
+  const fish = await prisma.productCategory.create({ data: { name: 'דגים', slug: 'fish' } });
+  const meat = await prisma.productCategory.create({ data: { name: 'בשר', slug: 'meat' } });
+  const corn = await prisma.productCategory.create({ data: { name: 'תירס ופופקורן', slug: 'corn' } });
+  const olivesPickles = await prisma.productCategory.create({ data: { name: 'זיתים וחמוצים', slug: 'olives-pickles' } });
+  const nuts = await prisma.productCategory.create({ data: { name: 'אגוזים וגרעינים', slug: 'nuts' } });
+  const salads = await prisma.productCategory.create({ data: { name: 'סלטים', slug: 'salads' } });
+  const creamDesserts = await prisma.productCategory.create({ data: { name: 'קרמים וקינוחים', slug: 'cream-desserts' } });
+  const candy = await prisma.productCategory.create({ data: { name: 'סוכריות וממתקים', slug: 'candy' } });
+  const driedFruits = await prisma.productCategory.create({ data: { name: 'פירות יבשים', slug: 'dried-fruits' } });
+  const freshHerbs = await prisma.productCategory.create({ data: { name: 'עשבי תיבול טריים', slug: 'fresh-herbs' } });
+  const paperProducts = await prisma.productCategory.create({ data: { name: 'מוצרי נייר', slug: 'paper-products' } });
+  const personalHygiene = await prisma.productCategory.create({ data: { name: 'היגיינה אישית', slug: 'personal-hygiene' } });
+  const skincare = await prisma.productCategory.create({ data: { name: 'טיפוח וקוסמטיקה', slug: 'skincare' } });
+  const couscous = await prisma.productCategory.create({ data: { name: 'קוסקוס ופתיתים', slug: 'couscous' } });
+  const halva = await prisma.productCategory.create({ data: { name: 'חלוה', slug: 'halva' } });
+  const hotDrinks = await prisma.productCategory.create({ data: { name: 'משקאות חמים', slug: 'hot-drinks' } });
+  const vegan = await prisma.productCategory.create({ data: { name: 'מוצרים טבעוניים', slug: 'vegan' } });
+  const petFood = await prisma.productCategory.create({ data: { name: 'מזון לחיות מחמד', slug: 'pet-food' } });
+  const disposables = await prisma.productCategory.create({ data: { name: 'כלים חד פעמיים', slug: 'disposables' } });
+  const iceCream = await prisma.productCategory.create({ data: { name: 'מוצרי גלידה', slug: 'ice-cream' } });
+  const general = await prisma.productCategory.create({ data: { name: 'כללי', slug: 'general' } });
+
   // ── Attribute Definitions ──
   const attrDefs = [
     // חלב
@@ -232,7 +271,16 @@ async function main() {
   });
 
   // ── Data Sources ──
-  for (const sm of [shufersal, yochananof, ramiLevy]) {
+  // Shufersal uses real file-based ingestion from GZ XML files
+  await prisma.dataSource.create({
+    data: {
+      supermarketId: shufersal.id,
+      type: 'shufersal-file',
+      config: JSON.stringify({}),
+    },
+  });
+  // Other chains use mock until real data is available
+  for (const sm of [yochananof, ramiLevy]) {
     await prisma.dataSource.create({
       data: {
         supermarketId: sm.id,
