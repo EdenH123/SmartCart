@@ -19,6 +19,10 @@ import type {
   PriceHistoryData,
   PriceDrop,
   SpendingAnalytics,
+  CostHistory,
+  CostHistoryPoint,
+  AdminStats,
+  SupermarketHealth,
 } from '@/types';
 
 const log = createLogger('actions');
@@ -88,6 +92,7 @@ export async function getBasketItems(basketId: string): Promise<BasketItemDTO[]>
     basketId: item.basketId,
     categoryId: item.categoryId,
     categoryName: item.category.name,
+    categorySlug: item.category.slug,
     quantity: item.quantity,
     matchMode: item.matchMode as MatchMode,
     selectedCanonicalProductId: item.selectedCanonicalProductId,
@@ -116,6 +121,7 @@ export async function addBasketItem(basketId: string, input: BasketItemInput): P
     basketId: item.basketId,
     categoryId: item.categoryId,
     categoryName: item.category.name,
+    categorySlug: item.category.slug,
     quantity: item.quantity,
     matchMode: item.matchMode as MatchMode,
     selectedCanonicalProductId: item.selectedCanonicalProductId,
@@ -483,6 +489,7 @@ export async function quickAddToBasket(
     basketId: item.basketId,
     categoryId: item.categoryId,
     categoryName: item.category.name,
+    categorySlug: item.category.slug,
     quantity: item.quantity,
     matchMode: item.matchMode as MatchMode,
     selectedCanonicalProductId: item.selectedCanonicalProductId,
@@ -1012,4 +1019,182 @@ export async function deleteSavedBasket(index: number): Promise<void> {
   const baskets: SavedBasket[] = JSON.parse(cookieStore.get('saved-baskets')?.value ?? '[]') as SavedBasket[];
   baskets.splice(index, 1);
   cookieStore.set('saved-baskets', JSON.stringify(baskets), { path: '/', maxAge: 60 * 60 * 24 * 365 });
+}
+
+// ── Barcode Lookup ──
+
+export interface BarcodeLookupResult {
+  canonicalProductId: string;
+  name: string;
+  brand: string | null;
+  categoryId: string;
+  categoryName: string;
+  categorySlug: string;
+}
+
+export async function lookupBarcode(barcode: string): Promise<BarcodeLookupResult | null> {
+  const trimmed = barcode.trim();
+  if (!trimmed) return null;
+
+  const product = await prisma.canonicalProduct.findFirst({
+    where: {
+      barcode: trimmed,
+      isActive: true,
+    },
+    include: { category: true },
+  });
+
+  if (!product) return null;
+
+  return {
+    canonicalProductId: product.id,
+    name: product.name,
+    brand: product.brand,
+    categoryId: product.category.id,
+    categoryName: product.category.name,
+    categorySlug: product.category.slug,
+  };
+}
+
+// ── Cost History ──
+
+export async function getCostHistory(basketId: string): Promise<CostHistory | null> {
+  const basketItems = await prisma.basketItem.findMany({
+    where: { basketId },
+  });
+
+  if (basketItems.length === 0) return null;
+
+  const categoryIds = [...new Set(basketItems.map((item) => item.categoryId))];
+
+  const snapshots = await prisma.priceSnapshot.findMany({
+    where: {
+      supermarketProduct: {
+        canonicalProduct: { categoryId: { in: categoryIds } },
+        inStock: true,
+      },
+    },
+    include: {
+      supermarketProduct: {
+        include: {
+          supermarket: { select: { id: true, name: true } },
+          canonicalProduct: { select: { categoryId: true } },
+        },
+      },
+    },
+    orderBy: { capturedAt: 'asc' },
+  });
+
+  // Group by date → supermarket → sum of cheapest price per category
+  const dateMap = new Map<string, Map<string, Map<string, number>>>();
+
+  for (const snap of snapshots) {
+    const dateStr = snap.capturedAt.toISOString().slice(0, 10);
+    const smId = snap.supermarketProduct.supermarket.id;
+    const smName = snap.supermarketProduct.supermarket.name;
+    const catId = snap.supermarketProduct.canonicalProduct.categoryId;
+
+    if (!dateMap.has(dateStr)) dateMap.set(dateStr, new Map());
+    const smMap = dateMap.get(dateStr)!;
+    const key = `${smId}|${smName}`;
+    if (!smMap.has(key)) smMap.set(key, new Map());
+    const catMap = smMap.get(key)!;
+
+    const existing = catMap.get(catId);
+    if (existing === undefined || snap.price < existing) {
+      catMap.set(catId, snap.price);
+    }
+  }
+
+  // For each date, find the cheapest supermarket total
+  const points: CostHistoryPoint[] = [];
+
+  for (const [date, smMap] of dateMap) {
+    let cheapestTotal = Infinity;
+    let cheapestName = '';
+
+    for (const [key, catMap] of smMap) {
+      let total = 0;
+      for (const item of basketItems) {
+        const price = catMap.get(item.categoryId);
+        if (price !== undefined) {
+          total += price * item.quantity;
+        }
+      }
+      if (total > 0 && total < cheapestTotal) {
+        cheapestTotal = total;
+        cheapestName = key.split('|')[1];
+      }
+    }
+
+    if (cheapestTotal < Infinity) {
+      points.push({
+        date,
+        cheapestTotal: Math.round(cheapestTotal * 100) / 100,
+        supermarketName: cheapestName,
+      });
+    }
+  }
+
+  // Return last 14 data points
+  const sorted = points.sort((a, b) => a.date.localeCompare(b.date)).slice(-14);
+
+  return {
+    points: sorted,
+    basketItemCount: basketItems.length,
+  };
+}
+
+// ── Admin Dashboard ──
+
+export async function getAdminStats(): Promise<AdminStats> {
+  const [totalProducts, totalCategories, totalSupermarkets, totalSnapshots] = await Promise.all([
+    prisma.canonicalProduct.count({ where: { isActive: true } }),
+    prisma.productCategory.count(),
+    prisma.supermarket.count({ where: { isActive: true } }),
+    prisma.priceSnapshot.count(),
+  ]);
+
+  const supermarkets = await prisma.supermarket.findMany({
+    where: { isActive: true },
+    include: {
+      products: {
+        select: {
+          price: true,
+          inStock: true,
+          isPromo: true,
+        },
+      },
+    },
+  });
+
+  const now = new Date();
+  const staleThreshold = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  const supermarketHealth: SupermarketHealth[] = supermarkets.map((s) => {
+    const products = s.products;
+    const totalPrices = products.filter((p) => p.inStock).map((p) => p.price);
+    const avgPrice = totalPrices.length > 0
+      ? Math.round((totalPrices.reduce((sum, p) => sum + p, 0) / totalPrices.length) * 100) / 100
+      : 0;
+
+    return {
+      name: s.name,
+      slug: s.slug,
+      productCount: products.length,
+      lastIngestionAt: s.lastIngestionAt?.toISOString() ?? null,
+      avgPrice,
+      outOfStockCount: products.filter((p) => !p.inStock).length,
+      promoCount: products.filter((p) => p.isPromo).length,
+      isStale: !s.lastIngestionAt || s.lastIngestionAt < staleThreshold,
+    };
+  });
+
+  return {
+    totalProducts,
+    totalCategories,
+    totalSupermarkets,
+    totalSnapshots,
+    supermarketHealth,
+  };
 }

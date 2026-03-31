@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Trash2, ShoppingCart, ArrowRight, Scale, Minus, Sparkles, Loader2, Package, Share2, GripVertical, ListChecks } from 'lucide-react';
+import { Plus, Trash2, ShoppingCart, ArrowRight, Scale, Minus, Sparkles, Loader2, Package, Share2, GripVertical, ListChecks, Flame } from 'lucide-react';
 import {
   getOrCreateBasket,
   getBasketItems,
@@ -16,11 +16,15 @@ import {
   shareBasket,
   importSharedBasket,
 } from '@/lib/actions';
+import type { BarcodeLookupResult } from '@/lib/actions';
+import BarcodeLookup from '@/components/BarcodeLookup';
 import { useToast } from '@/components/Toast';
 import AddProductModal from '@/components/AddProductModal';
 import PriceDropBanner from '@/components/PriceDropBanner';
 import { SavedBasketsPanel } from '@/components/SavedBasketsPanel';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import NutritionBadge from '@/components/NutritionBadge';
+import { getNutritionByCategory } from '@/lib/nutrition';
 import type { BasketItemDTO, BasketItemInput } from '@/types';
 
 const POPULAR_ITEMS: { label: string; categorySlug: string; constraints: Record<string, string> }[] = [
@@ -284,6 +288,27 @@ function BasketPageInner() {
     }
   };
 
+  const handleBarcodeAdd = async (result: BarcodeLookupResult) => {
+    if (!basketId) return;
+    try {
+      setBusy(true);
+      await addBasketItem(basketId, {
+        categoryId: result.categoryId,
+        quantity: 1,
+        matchMode: 'exact',
+        selectedCanonicalProductId: result.canonicalProductId,
+        userConstraints: {},
+        displayName: result.name,
+      });
+      await loadBasket(basketId);
+      showToast('success', `${result.name} נוסף לסל`);
+    } catch {
+      showToast('error', 'שגיאה בהוספת המוצר');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (loading) {
     return <BasketSkeleton />;
   }
@@ -384,6 +409,11 @@ function BasketPageInner() {
               ))}
             </div>
           </div>
+
+          <div className="mt-6">
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">חיפוש לפי ברקוד</h3>
+            <BarcodeLookup onAdd={handleBarcodeAdd} disabled={busy} />
+          </div>
         </div>
       )}
 
@@ -483,6 +513,9 @@ function BasketPageInner() {
                           <span className="text-gray-400 font-normal"> · {priceRanges[item.id]!.count} סופרים</span>
                         </p>
                       )}
+                      {!shoppingMode && getNutritionByCategory(item.categorySlug) && (
+                        <NutritionBadge nutrition={getNutritionByCategory(item.categorySlug)!} />
+                      )}
                       {!shoppingMode && Object.keys(item.userConstraints).length > 0 && (
                         <div className="mt-1.5 flex flex-wrap gap-1">
                           {Object.entries(item.userConstraints).map(([key, value]) => (
@@ -559,6 +592,54 @@ function BasketPageInner() {
               )}
             </div>
           )}
+
+          {/* Total nutrition summary */}
+          {!shoppingMode && (() => {
+            const totals = items.reduce(
+              (acc, item) => {
+                const info = getNutritionByCategory(item.categorySlug);
+                if (info) {
+                  acc.calories += info.calories * item.quantity;
+                  acc.protein += info.protein * item.quantity;
+                  acc.carbs += info.carbs * item.quantity;
+                  acc.fat += info.fat * item.quantity;
+                  acc.hasAny = true;
+                }
+                return acc;
+              },
+              { calories: 0, protein: 0, carbs: 0, fat: 0, hasAny: false }
+            );
+            if (!totals.hasAny) return null;
+            return (
+              <div className="mt-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5">
+                  <Flame className="h-4 w-4 text-orange-500" />
+                  סיכום תזונתי (הערכה)
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="rounded-lg bg-orange-50 dark:bg-orange-900/20 p-2.5 text-center">
+                    <p className="text-lg font-bold text-orange-600 dark:text-orange-400">{Math.round(totals.calories)}</p>
+                    <p className="text-[11px] text-orange-500 dark:text-orange-400/80">קלוריות</p>
+                  </div>
+                  <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-2.5 text-center">
+                    <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{Math.round(totals.protein)} גר׳</p>
+                    <p className="text-[11px] text-blue-500 dark:text-blue-400/80">חלבון</p>
+                  </div>
+                  <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 p-2.5 text-center">
+                    <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">{Math.round(totals.carbs)} גר׳</p>
+                    <p className="text-[11px] text-yellow-500 dark:text-yellow-400/80">פחמימות</p>
+                  </div>
+                  <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-2.5 text-center">
+                    <p className="text-lg font-bold text-red-600 dark:text-red-400">{Math.round(totals.fat)} גר׳</p>
+                    <p className="text-[11px] text-red-500 dark:text-red-400/80">שומן</p>
+                  </div>
+                </div>
+                <p className="mt-2 text-[10px] text-gray-400 dark:text-gray-500 text-center">
+                  * הערכים הם הערכה לפי קטגוריה, למנה סטנדרטית אחת לכל פריט
+                </p>
+              </div>
+            );
+          })()}
 
           {/* Action buttons */}
           {!shoppingMode && (

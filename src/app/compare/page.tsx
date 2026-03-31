@@ -267,13 +267,13 @@ function ComparisonTable({ result }: { result: ComparisonResult }) {
       <table className="w-full min-w-[480px] text-sm">
         <thead>
           <tr className="bg-gray-50 border-b border-gray-200">
-            <th className="sticky right-0 z-10 bg-gray-50 px-4 py-3 text-right font-semibold text-gray-700 min-w-[140px]">
+            <th className="sticky right-0 z-10 bg-gray-50 px-3 sm:px-4 py-3 text-right font-semibold text-gray-700 min-w-[120px] sm:min-w-[140px] after:absolute after:left-0 after:top-0 after:bottom-0 after:w-[1px] after:bg-gray-200 after:content-[''] relative">
               מוצר
             </th>
             {sortedComparisons.map((comp, idx) => (
-              <th key={comp.supermarketId} className="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">
+              <th key={comp.supermarketId} className="px-3 sm:px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">
                 <div className="flex flex-col items-center gap-0.5">
-                  <span>{comp.supermarketName}</span>
+                  <span className="text-xs sm:text-sm">{comp.supermarketName}</span>
                   {idx === 0 && (
                     <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-brand-600">
                       <Trophy className="h-3 w-3" />
@@ -290,8 +290,11 @@ function ComparisonTable({ result }: { result: ComparisonResult }) {
             const minMax = minMaxPerItem.get(item.basketItemId);
             return (
               <tr key={item.basketItemId} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                <td className="sticky right-0 z-10 px-4 py-2.5 font-medium text-gray-900 min-w-[140px]" style={{ backgroundColor: rowIdx % 2 === 0 ? 'white' : 'rgb(249 250 251 / 0.5)' }}>
-                  <div className="truncate max-w-[180px]">{item.displayName}</div>
+                <td
+                  className="sticky right-0 z-10 px-3 sm:px-4 py-2.5 font-medium text-gray-900 min-w-[120px] sm:min-w-[140px] after:absolute after:left-0 after:top-0 after:bottom-0 after:w-[1px] after:bg-gray-200 after:content-[''] relative"
+                  style={{ backgroundColor: rowIdx % 2 === 0 ? 'white' : 'rgb(249 250 251 / 0.5)' }}
+                >
+                  <div className="truncate max-w-[120px] sm:max-w-[180px] text-xs sm:text-sm">{item.displayName}</div>
                   {item.quantity > 1 && (
                     <span className="text-xs text-gray-400">x{item.quantity}</span>
                   )}
@@ -308,7 +311,7 @@ function ComparisonTable({ result }: { result: ComparisonResult }) {
                   }
 
                   return (
-                    <td key={comp.supermarketId} className={`px-4 py-2.5 text-center whitespace-nowrap transition-colors ${cellColor}`}>
+                    <td key={comp.supermarketId} className={`px-3 sm:px-4 py-2.5 text-center whitespace-nowrap transition-colors text-xs sm:text-sm ${cellColor}`}>
                       {isUnavailable ? (
                         <span className="text-xs text-gray-400">--</span>
                       ) : price != null ? (
@@ -325,11 +328,11 @@ function ComparisonTable({ result }: { result: ComparisonResult }) {
         </tbody>
         <tfoot>
           <tr className="border-t-2 border-gray-300 bg-gray-50 font-bold">
-            <td className="sticky right-0 z-10 bg-gray-50 px-4 py-3 text-right text-gray-900">
+            <td className="sticky right-0 z-10 bg-gray-50 px-3 sm:px-4 py-3 text-right text-gray-900 after:absolute after:left-0 after:top-0 after:bottom-0 after:w-[1px] after:bg-gray-200 after:content-[''] relative">
               סה&quot;כ
             </td>
             {sortedComparisons.map((comp, idx) => (
-              <td key={comp.supermarketId} className={`px-4 py-3 text-center tabular-nums ${idx === 0 ? 'text-brand-700' : 'text-gray-900'}`}>
+              <td key={comp.supermarketId} className={`px-3 sm:px-4 py-3 text-center tabular-nums ${idx === 0 ? 'text-brand-700' : 'text-gray-900'}`}>
                 {formatPrice(comp.total)}
               </td>
             ))}

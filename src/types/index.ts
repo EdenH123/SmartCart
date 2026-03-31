@@ -2,6 +2,14 @@
 
 export type MatchMode = 'exact' | 'flexible';
 
+export interface NutritionInfo {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  serving: string;
+}
+
 export type AttributeType = 'text' | 'number' | 'enum' | 'boolean';
 
 export type ResolutionType = 'exact' | 'flexible_match' | 'unavailable';
@@ -43,6 +51,7 @@ export interface BasketItemDTO {
   basketId: string;
   categoryId: string;
   categoryName: string;
+  categorySlug: string;
   quantity: number;
   matchMode: MatchMode;
   selectedCanonicalProductId: string | null;
@@ -252,4 +261,38 @@ export interface SpendingAnalytics {
   potentialMaxSavings: number;
   cheapestSupermarket: string;
   cheapestTotal: number;
+}
+
+// ── Cost History ──
+
+export interface CostHistoryPoint {
+  date: string;
+  cheapestTotal: number;
+  supermarketName: string;
+}
+
+export interface CostHistory {
+  points: CostHistoryPoint[];
+  basketItemCount: number;
+}
+
+// ── Admin Dashboard ──
+
+export interface SupermarketHealth {
+  name: string;
+  slug: string;
+  productCount: number;
+  lastIngestionAt: string | null;
+  avgPrice: number;
+  outOfStockCount: number;
+  promoCount: number;
+  isStale: boolean;
+}
+
+export interface AdminStats {
+  totalProducts: number;
+  totalCategories: number;
+  totalSupermarkets: number;
+  totalSnapshots: number;
+  supermarketHealth: SupermarketHealth[];
 }
