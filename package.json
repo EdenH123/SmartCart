@@ -17,7 +17,8 @@
     "db:reset": "npx prisma db push --force-reset && npx tsx prisma/seed.ts",
     "ingest": "tsx scripts/ingest-shufersal.ts",
     "ingest:promos": "tsx scripts/ingest-promos.ts",
-    "test": "jest"
+    "test": "jest",
+    "test:e2e": "npx playwright test"
   },
   "repository": {
     "type": "git",
@@ -46,6 +47,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "jest": "^30.3.0",

@@ -18,6 +18,8 @@ import {
 } from '@/lib/actions';
 import { useToast } from '@/components/Toast';
 import AddProductModal from '@/components/AddProductModal';
+import PriceDropBanner from '@/components/PriceDropBanner';
+import { SavedBasketsPanel } from '@/components/SavedBasketsPanel';
 import type { BasketItemDTO, BasketItemInput } from '@/types';
 
 const POPULAR_ITEMS: { label: string; categorySlug: string; constraints: Record<string, string> }[] = [
@@ -300,6 +302,20 @@ function BasketPageInner() {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Price drop banner */}
+      {items.length > 0 && basketId && (
+        <div className="mt-6">
+          <PriceDropBanner basketId={basketId} />
+        </div>
+      )}
+
+      {/* Saved baskets */}
+      {basketId && (
+        <div className="mt-6">
+          <SavedBasketsPanel basketId={basketId} onBasketLoaded={() => loadBasket(basketId)} />
         </div>
       )}
 

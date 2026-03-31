@@ -17,6 +17,8 @@ import type {
   SupermarketDTO,
   UserConstraints,
   PriceHistoryData,
+  PriceDrop,
+  SpendingAnalytics,
 } from '@/types';
 
 const log = createLogger('actions');
@@ -657,4 +659,357 @@ export async function getPriceHistory(canonicalProductId: string): Promise<Price
       isPromo: snap.isPromo,
     })),
   }));
+}
+
+// ── Price Drop Notifications ──
+
+export async function checkPriceDrops(basketId: string): Promise<PriceDrop[]> {
+  const basketItems = await prisma.basketItem.findMany({
+    where: { basketId },
+    include: { category: true },
+  });
+
+  if (basketItems.length === 0) return [];
+
+  const categoryIds = [...new Set(basketItems.map((item) => item.categoryId))];
+
+  const supermarketProducts = await prisma.supermarketProduct.findMany({
+    where: {
+      canonicalProduct: { categoryId: { in: categoryIds } },
+      inStock: true,
+    },
+    include: {
+      canonicalProduct: { select: { id: true, categoryId: true, name: true } },
+      supermarket: { select: { name: true } },
+      priceSnapshots: {
+        orderBy: { capturedAt: 'desc' },
+        take: 2,
+      },
+    },
+  });
+
+  const drops: PriceDrop[] = [];
+
+  for (const sp of supermarketProducts) {
+    if (sp.priceSnapshots.length < 2) continue;
+
+    const [current, previous] = sp.priceSnapshots;
+    if (current.price >= previous.price) continue;
+
+    const matchingItem = basketItems.find((item) => item.categoryId === sp.canonicalProduct.categoryId);
+    if (!matchingItem) continue;
+
+    const dropPercent = ((previous.price - current.price) / previous.price) * 100;
+
+    drops.push({
+      productName: sp.canonicalProduct.name,
+      supermarket: sp.supermarket.name,
+      oldPrice: previous.price,
+      newPrice: current.price,
+      dropPercent: Math.round(dropPercent * 10) / 10,
+    });
+  }
+
+  drops.sort((a, b) => b.dropPercent - a.dropPercent);
+  return drops;
+}
+
+// ── Category Browsing ──
+
+export interface CategoryWithProductCount {
+  id: string;
+  name: string;
+  slug: string;
+  productCount: number;
+}
+
+export async function getCategoriesWithProductCount(): Promise<CategoryWithProductCount[]> {
+  const categories = await prisma.productCategory.findMany({
+    include: {
+      _count: {
+        select: {
+          canonicalProducts: { where: { isActive: true } },
+        },
+      },
+    },
+    orderBy: { name: 'asc' },
+  });
+
+  return categories.map((cat) => ({
+    id: cat.id,
+    name: cat.name,
+    slug: cat.slug,
+    productCount: cat._count.canonicalProducts,
+  }));
+}
+
+export interface CategoryProduct {
+  id: string;
+  name: string;
+  brand: string | null;
+  categoryId: string;
+  categoryName: string;
+  categorySlug: string;
+  metadata: Record<string, unknown>;
+  priceMin: number | null;
+  priceMax: number | null;
+  supermarketCount: number;
+}
+
+export interface CategoryProductsPage {
+  products: CategoryProduct[];
+  totalCount: number;
+  hasMore: boolean;
+}
+
+export async function getProductsByCategory(
+  categoryId: string,
+  page: number = 1
+): Promise<CategoryProductsPage> {
+  const PAGE_SIZE = 20;
+  const skip = (page - 1) * PAGE_SIZE;
+
+  const [products, totalCount] = await Promise.all([
+    prisma.canonicalProduct.findMany({
+      where: { categoryId, isActive: true },
+      include: {
+        category: true,
+        supermarketProducts: {
+          where: { inStock: true },
+          select: {
+            price: true,
+            supermarketId: true,
+            priceSnapshots: {
+              orderBy: { capturedAt: 'desc' },
+              take: 1,
+              select: { price: true, inStock: true },
+            },
+          },
+        },
+      },
+      orderBy: { name: 'asc' },
+      skip,
+      take: PAGE_SIZE,
+    }),
+    prisma.canonicalProduct.count({
+      where: { categoryId, isActive: true },
+    }),
+  ]);
+
+  const result: CategoryProduct[] = products.map((product) => {
+    let min = Infinity;
+    let max = -Infinity;
+    const supermarketIds = new Set<string>();
+
+    for (const sp of product.supermarketProducts) {
+      const snap = sp.priceSnapshots[0];
+      if (snap && !snap.inStock) continue;
+      const price = snap?.price ?? sp.price;
+      if (price < min) min = price;
+      if (price > max) max = price;
+      supermarketIds.add(sp.supermarketId);
+    }
+
+    return {
+      id: product.id,
+      name: product.name,
+      brand: product.brand,
+      categoryId: product.categoryId,
+      categoryName: product.category.name,
+      categorySlug: product.category.slug,
+      metadata: safeJsonParse(product.metadata) as Record<string, unknown>,
+      priceMin: min === Infinity ? null : min,
+      priceMax: max === -Infinity ? null : max,
+      supermarketCount: supermarketIds.size,
+    };
+  });
+
+  return {
+    products: result,
+    totalCount,
+    hasMore: skip + PAGE_SIZE < totalCount,
+  };
+}
+
+// ── Spending Analytics ──
+
+export async function getSpendingAnalytics(basketId: string): Promise<SpendingAnalytics | null> {
+  const basketItems = await prisma.basketItem.findMany({
+    where: { basketId },
+    include: { category: true },
+  });
+
+  if (basketItems.length === 0) return null;
+
+  const categoryIds = [...new Set(basketItems.map((item) => item.categoryId))];
+
+  const supermarkets = await prisma.supermarket.findMany({ where: { isActive: true } });
+
+  const supermarketProducts = await prisma.supermarketProduct.findMany({
+    where: {
+      canonicalProduct: { categoryId: { in: categoryIds } },
+      inStock: true,
+    },
+    include: {
+      canonicalProduct: { select: { id: true, categoryId: true, name: true } },
+      supermarket: { select: { id: true, name: true } },
+    },
+  });
+
+  // Cost per supermarket
+  const costBySupermarket: Record<string, { name: string; total: number }> = {};
+  for (const s of supermarkets) {
+    costBySupermarket[s.id] = { name: s.name, total: 0 };
+  }
+
+  // Category spending (using cheapest supermarket prices)
+  const categoryTotals: Record<string, { name: string; amount: number }> = {};
+
+  // Price range per product
+  const productPrices: Record<string, { name: string; prices: number[] }> = {};
+
+  for (const item of basketItems) {
+    const matching = supermarketProducts.filter(
+      (sp) => sp.canonicalProduct.categoryId === item.categoryId
+    );
+
+    let cheapestPrice = Infinity;
+
+    for (const sp of matching) {
+      const price = sp.price * item.quantity;
+      if (costBySupermarket[sp.supermarket.id]) {
+        costBySupermarket[sp.supermarket.id].total += price;
+      }
+
+      if (!productPrices[sp.canonicalProduct.id]) {
+        productPrices[sp.canonicalProduct.id] = { name: sp.canonicalProduct.name, prices: [] };
+      }
+      productPrices[sp.canonicalProduct.id].prices.push(sp.price);
+
+      if (sp.price < cheapestPrice) cheapestPrice = sp.price;
+    }
+
+    const catName = item.category.name;
+    if (!categoryTotals[catName]) {
+      categoryTotals[catName] = { name: catName, amount: 0 };
+    }
+    if (cheapestPrice < Infinity) {
+      categoryTotals[catName].amount += cheapestPrice * item.quantity;
+    }
+  }
+
+  const supermarketCosts = Object.values(costBySupermarket)
+    .filter((s) => s.total > 0)
+    .sort((a, b) => a.total - b.total);
+
+  const totalCategorySpending = Object.values(categoryTotals).reduce((s, c) => s + c.amount, 0);
+  const categoryBreakdown = Object.values(categoryTotals)
+    .filter((c) => c.amount > 0)
+    .map((c) => ({
+      categoryName: c.name,
+      amount: Math.round(c.amount * 100) / 100,
+      percentage: totalCategorySpending > 0 ? Math.round((c.amount / totalCategorySpending) * 100) : 0,
+    }))
+    .sort((a, b) => b.amount - a.amount);
+
+  const savingsOpportunities = Object.values(productPrices)
+    .filter((p) => p.prices.length >= 2)
+    .map((p) => ({
+      productName: p.name,
+      minPrice: Math.min(...p.prices),
+      maxPrice: Math.max(...p.prices),
+      savings: Math.round((Math.max(...p.prices) - Math.min(...p.prices)) * 100) / 100,
+    }))
+    .filter((p) => p.savings > 0)
+    .sort((a, b) => b.savings - a.savings)
+    .slice(0, 10);
+
+  const cheapest = supermarketCosts[0];
+  const mostExpensive = supermarketCosts[supermarketCosts.length - 1];
+
+  return {
+    totalItems: basketItems.reduce((s, i) => s + i.quantity, 0),
+    supermarketCosts: supermarketCosts.map((s) => ({ supermarketName: s.name, totalCost: Math.round(s.total * 100) / 100 })),
+    categoryBreakdown,
+    savingsOpportunities,
+    potentialMaxSavings: cheapest && mostExpensive ? Math.round((mostExpensive.total - cheapest.total) * 100) / 100 : 0,
+    cheapestSupermarket: cheapest?.name ?? '',
+    cheapestTotal: cheapest ? Math.round(cheapest.total * 100) / 100 : 0,
+  };
+}
+
+// ── Saved Baskets ──
+
+interface SavedBasket {
+  name: string;
+  items: Array<{ categoryId: string; categoryName: string; userConstraints: string; displayName: string; quantity: number; matchMode: string }>;
+  savedAt: string;
+}
+
+export async function saveBasketAs(basketId: string, name: string): Promise<void> {
+  const cookieStore = await cookies();
+  const items = await prisma.basketItem.findMany({
+    where: { basketId },
+    include: { category: true },
+  });
+
+  const savedEntry: SavedBasket = {
+    name,
+    items: items.map((i) => ({
+      categoryId: i.categoryId,
+      categoryName: i.category.name,
+      userConstraints: i.userConstraints,
+      displayName: i.displayName,
+      quantity: i.quantity,
+      matchMode: i.matchMode,
+    })),
+    savedAt: new Date().toISOString(),
+  };
+
+  const existing: SavedBasket[] = JSON.parse(cookieStore.get('saved-baskets')?.value ?? '[]') as SavedBasket[];
+  existing.unshift(savedEntry);
+  const trimmed = existing.slice(0, 10);
+  cookieStore.set('saved-baskets', JSON.stringify(trimmed), { path: '/', maxAge: 60 * 60 * 24 * 365 });
+}
+
+export async function getSavedBaskets(): Promise<Array<{ name: string; itemCount: number; savedAt: string }>> {
+  const cookieStore = await cookies();
+  const baskets: SavedBasket[] = JSON.parse(cookieStore.get('saved-baskets')?.value ?? '[]') as SavedBasket[];
+  return baskets.map((b) => ({
+    name: b.name,
+    itemCount: b.items.length,
+    savedAt: b.savedAt,
+  }));
+}
+
+export async function loadSavedBasket(index: number): Promise<string> {
+  const cookieStore = await cookies();
+  const baskets: SavedBasket[] = JSON.parse(cookieStore.get('saved-baskets')?.value ?? '[]') as SavedBasket[];
+  const basket = baskets[index];
+  if (!basket) throw new Error('Basket not found');
+
+  const basketId = await getOrCreateBasket();
+  await prisma.basketItem.deleteMany({ where: { basketId } });
+
+  for (const item of basket.items) {
+    await prisma.basketItem.create({
+      data: {
+        basketId,
+        categoryId: item.categoryId,
+        userConstraints: item.userConstraints,
+        displayName: item.displayName,
+        quantity: item.quantity,
+        matchMode: item.matchMode,
+      },
+    });
+  }
+
+  return basketId;
+}
+
+export async function deleteSavedBasket(index: number): Promise<void> {
+  const cookieStore = await cookies();
+  const baskets: SavedBasket[] = JSON.parse(cookieStore.get('saved-baskets')?.value ?? '[]') as SavedBasket[];
+  baskets.splice(index, 1);
+  cookieStore.set('saved-baskets', JSON.stringify(baskets), { path: '/', maxAge: 60 * 60 * 24 * 365 });
 }
