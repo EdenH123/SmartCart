@@ -22,20 +22,29 @@
     background-image: radial-gradient(ellipse at top, rgb(238 251 243 / 0.4) 0%, transparent 50%);
     background-attachment: fixed;
   }
+
+  .dark body {
+    @apply bg-gray-900 text-gray-100;
+    background-image: none;
+  }
+
+  .dark * {
+    @apply border-gray-800;
+  }
 }
 
 @layer components {
   /* ─── Buttons ─── */
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-brand-700 hover:shadow-md hover:-translate-y-px active:translate-y-0 active:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-sm;
+    @apply inline-flex items-center justify-center rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-brand-700 hover:shadow-md hover:-translate-y-px active:translate-y-0 active:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-sm dark:hover:bg-brand-500;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 transition-all duration-200 hover:bg-gray-50 hover:ring-gray-300 hover:shadow-md hover:-translate-y-px active:translate-y-0 active:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0;
+    @apply inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 transition-all duration-200 hover:bg-gray-50 hover:ring-gray-300 hover:shadow-md hover:-translate-y-px active:translate-y-0 active:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 dark:bg-gray-800 dark:text-gray-100 dark:ring-gray-700 dark:hover:bg-gray-700;
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-700 transition-all duration-200 hover:bg-gray-100 active:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-700 transition-all duration-200 hover:bg-gray-100 active:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed dark:text-gray-300 dark:hover:bg-gray-800;
   }
 
   .btn-danger {
@@ -44,7 +53,7 @@
 
   /* ─── Cards ─── */
   .card {
-    @apply rounded-2xl bg-white shadow-card ring-1 ring-gray-950/[0.04] transition-all duration-200;
+    @apply rounded-2xl bg-white shadow-card ring-1 ring-gray-950/[0.04] transition-all duration-200 dark:bg-gray-800 dark:ring-gray-700/30;
   }
 
   .card-hover {
@@ -61,36 +70,36 @@
   }
 
   .badge-exact {
-    @apply badge bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20;
+    @apply badge bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-500/30;
   }
 
   .badge-flexible {
-    @apply badge bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20;
+    @apply badge bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-900/30 dark:text-amber-300 dark:ring-amber-500/30;
   }
 
   .badge-promo {
-    @apply badge bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20;
+    @apply badge bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20 dark:bg-green-900/30 dark:text-green-300 dark:ring-green-500/30;
   }
 
   .badge-unavailable {
-    @apply badge bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20;
+    @apply badge bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20 dark:bg-red-900/30 dark:text-red-300 dark:ring-red-500/30;
   }
 
   .badge-substituted {
-    @apply badge bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-600/20;
+    @apply badge bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-600/20 dark:bg-purple-900/30 dark:text-purple-300 dark:ring-purple-500/30;
   }
 
   .badge-best {
-    @apply badge bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-600/20;
+    @apply badge bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-600/20 dark:bg-brand-900/30 dark:text-brand-300 dark:ring-brand-500/30;
   }
 
   /* ─── Inputs ─── */
   .input {
-    @apply w-full rounded-xl border border-gray-200 bg-white py-2.5 px-4 text-sm shadow-sm transition-all duration-200 placeholder:text-gray-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:shadow-glow-brand;
+    @apply w-full rounded-xl border border-gray-200 bg-white py-2.5 px-4 text-sm shadow-sm transition-all duration-200 placeholder:text-gray-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:shadow-glow-brand dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500;
   }
 
   .select {
-    @apply input appearance-none cursor-pointer;
+    @apply input appearance-none cursor-pointer dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500;
   }
 
   /* ─── Supermarket brand borders ─── */
@@ -114,7 +123,7 @@
 
   /* ─── Chip / pill buttons ─── */
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3.5 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:hover:border-gray-200 disabled:hover:bg-white disabled:hover:text-gray-700 disabled:hover:shadow-sm;
+    @apply inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3.5 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:hover:border-gray-200 disabled:hover:bg-white disabled:hover:text-gray-700 disabled:hover:shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-brand-600 dark:hover:bg-brand-900/30;
   }
 
   /* ─── Savings highlight ─── */
@@ -122,10 +131,10 @@
     @apply rounded-2xl border p-5 transition-all duration-200;
   }
   .savings-banner-positive {
-    @apply savings-banner border-green-200 bg-gradient-to-l from-green-50 to-green-50/50;
+    @apply savings-banner border-green-200 bg-gradient-to-l from-green-50 to-green-50/50 dark:border-green-800 dark:bg-green-900/30;
   }
   .savings-banner-neutral {
-    @apply savings-banner border-gray-200 bg-gray-50;
+    @apply savings-banner border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800;
   }
 }
 

@@ -198,3 +198,18 @@ export interface SplitCartResult {
   savingsVsBest: number; // savings vs best single supermarket
   supermarketBreakdown: { supermarketId: string; supermarketName: string; itemCount: number; subtotal: number }[];
 }
+
+// ── Price History ──
+
+export interface PriceHistoryPoint {
+  date: string;
+  price: number;
+  isPromo: boolean;
+}
+
+export interface PriceHistorySeries {
+  supermarketName: string;
+  data: PriceHistoryPoint[];
+}
+
+export type PriceHistoryData = PriceHistorySeries[];

@@ -16,6 +16,7 @@ import type {
   ProductSearchResult,
   SupermarketDTO,
   UserConstraints,
+  PriceHistoryData,
 } from '@/types';
 
 const log = createLogger('actions');
@@ -564,6 +565,59 @@ export async function getItemPriceRanges(
   return result;
 }
 
+// ── Share Basket ──
+
+export async function shareBasket(basketId: string): Promise<string> {
+  const items = await prisma.basketItem.findMany({
+    where: { basketId },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  const compact = items.map((item) => ({
+    c: item.categoryId,
+    q: item.quantity,
+    m: item.matchMode,
+    p: item.selectedCanonicalProductId,
+    u: safeJsonParse(item.userConstraints),
+    d: item.displayName,
+  }));
+
+  const json = JSON.stringify(compact);
+  const encoded = Buffer.from(json, 'utf-8').toString('base64url');
+  return encoded;
+}
+
+export async function importSharedBasket(encoded: string): Promise<string> {
+  const json = Buffer.from(encoded, 'base64url').toString('utf-8');
+  const compact = JSON.parse(json) as Array<{
+    c: string;
+    q: number;
+    m: string;
+    p: string | null;
+    u: Record<string, unknown>;
+    d: string;
+  }>;
+
+  const basket = await prisma.basket.create({
+    data: {
+      items: {
+        create: compact.map((item) => ({
+          categoryId: item.c,
+          quantity: item.q,
+          matchMode: item.m,
+          selectedCanonicalProductId: item.p,
+          userConstraints: JSON.stringify(item.u),
+          displayName: item.d,
+        })),
+      },
+    },
+  });
+
+  const cookieStore = await cookies();
+  cookieStore.set(BASKET_COOKIE, basket.id, { maxAge: BASKET_COOKIE_MAX_AGE, path: '/' });
+  return basket.id;
+}
+
 // ── Supermarket Info ──
 
 export async function getSupermarkets(): Promise<SupermarketDTO[]> {
@@ -578,5 +632,29 @@ export async function getSupermarkets(): Promise<SupermarketDTO[]> {
     slug: s.slug,
     logoUrl: s.logoUrl,
     lastIngestionAt: s.lastIngestionAt?.toISOString() ?? null,
+  }));
+}
+
+// ── Price History ──
+
+export async function getPriceHistory(canonicalProductId: string): Promise<PriceHistoryData> {
+  const supermarketProducts = await prisma.supermarketProduct.findMany({
+    where: { canonicalProductId },
+    include: {
+      supermarket: { select: { name: true } },
+      priceSnapshots: {
+        orderBy: { capturedAt: 'desc' },
+        take: 30,
+      },
+    },
+  });
+
+  return supermarketProducts.map((sp) => ({
+    supermarketName: sp.supermarket.name,
+    data: sp.priceSnapshots.map((snap) => ({
+      date: snap.capturedAt.toISOString(),
+      price: snap.price,
+      isPromo: snap.isPromo,
+    })),
   }));
 }

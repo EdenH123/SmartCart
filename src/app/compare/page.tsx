@@ -3,9 +3,9 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Trophy, AlertTriangle, ArrowRight, RefreshCw, TrendingDown, Clock, Info, LayoutGrid, TableProperties } from 'lucide-react';
+import { Trophy, AlertTriangle, ArrowRight, RefreshCw, TrendingDown, Clock, Info, LayoutGrid, TableProperties, ShoppingCart } from 'lucide-react';
 import { compareBasketAction } from '@/lib/actions';
-import { formatPrice, formatTimeAgo } from '@/lib/utils';
+import { formatPrice, formatTimeAgo, isStale } from '@/lib/utils';
 import type { ComparisonResult, SupermarketComparison } from '@/types';
 
 export default function ComparePage() {
@@ -103,11 +103,16 @@ function ComparePageInner() {
   if (result.comparisons.length === 0) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-16 text-center">
-        <h2 className="text-lg font-semibold text-gray-900">אין תוצאות</h2>
-        <p className="mt-2 text-sm text-gray-500">ייתכן שהסל שלכם ריק.</p>
-        <Link href="/basket" className="btn-primary mt-6 inline-flex">
-          חזרה לסל
-        </Link>
+        <div className="card mx-auto max-w-md p-8">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-50">
+            <ShoppingCart className="h-7 w-7 text-gray-400" />
+          </div>
+          <h2 className="mt-4 text-lg font-semibold text-gray-900">אין תוצאות</h2>
+          <p className="mt-2 text-sm text-gray-500">ייתכן שהסל שלכם ריק. הוסיפו מוצרים לסל כדי להשוות מחירים.</p>
+          <Link href="/basket" className="btn-primary mt-6 inline-flex">
+            חזרה לסל
+          </Link>
+        </div>
       </div>
     );
   }
@@ -184,13 +189,18 @@ function ComparePageInner() {
       {viewMode === 'cards' && (
         <div className="mt-6 space-y-4">
           {result.comparisons.map((comp, index) => (
-            <SupermarketCard
+            <div
               key={comp.supermarketId}
-              comparison={comp}
-              rank={index + 1}
-              isBest={comp.supermarketId === result.bestSupermarketId}
-              basketId={basketId!}
-            />
+              className="animate-slide-up"
+              style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'backwards' }}
+            >
+              <SupermarketCard
+                comparison={comp}
+                rank={index + 1}
+                isBest={comp.supermarketId === result.bestSupermarketId}
+                basketId={basketId!}
+              />
+            </div>
           ))}
         </div>
       )}
@@ -350,6 +360,12 @@ function SupermarketCard({
                   <p className="flex items-center gap-1 text-xs text-gray-400">
                     <Clock className="h-3 w-3" />
                     עודכן לפני {formatTimeAgo(comparison.lastIngestionAt)}
+                  </p>
+                )}
+                {isStale(comparison.lastIngestionAt) && (
+                  <p className="flex items-center gap-1 text-xs font-medium text-amber-600">
+                    <AlertTriangle className="h-3 w-3" />
+                    מחירים עשויים להיות לא מעודכנים
                   </p>
                 )}
               </div>

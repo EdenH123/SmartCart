@@ -11,7 +11,7 @@ export default function HomePage() {
             <Zap className="h-3.5 w-3.5" />
             השוואת מחירים חכמה לסופרמרקטים בישראל
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl lg:text-6xl">
             השוו את סל הקניות
             <br />
             <span className="bg-gradient-to-l from-brand-600 to-brand-500 bg-clip-text text-transparent">
@@ -39,8 +39,8 @@ export default function HomePage() {
       {/* How it works */}
       <section className="pb-20">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">איך זה עובד</h2>
-          <p className="mt-2 text-gray-500">שלושה צעדים פשוטים לקנייה חכמה יותר</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 sm:text-3xl">איך זה עובד</h2>
+          <p className="mt-2 text-gray-500 dark:text-gray-400">שלושה צעדים פשוטים לקנייה חכמה יותר</p>
         </div>
         <div className="mt-12 grid gap-6 sm:grid-cols-3">
           {[
@@ -68,15 +68,19 @@ export default function HomePage() {
               gradient: 'from-emerald-500 to-emerald-600',
               bg: 'bg-emerald-50',
             },
-          ].map((item) => (
-            <div key={item.step} className="card-hover p-6 text-center group">
+          ].map((item, index) => (
+            <div
+              key={item.step}
+              className="card-hover p-6 text-center group animate-slide-up"
+              style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
+            >
               <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl ${item.bg} transition-transform duration-200 group-hover:scale-110`}>
                 <item.icon className={`h-7 w-7 bg-gradient-to-br ${item.gradient} bg-clip-text`} style={{ color: item.gradient.includes('blue') ? '#3b82f6' : item.gradient.includes('brand') ? '#25a768' : '#10b981' }} />
               </div>
-              <div className="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-500">
+              <div className="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-bold text-gray-500">
                 {item.step}
               </div>
-              <h3 className="mt-2 text-lg font-semibold text-gray-900">{item.title}</h3>
+              <h3 className="mt-2 text-lg font-semibold text-gray-900 dark:text-gray-100">{item.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-gray-500">
                 {item.description}
               </p>
@@ -87,7 +91,7 @@ export default function HomePage() {
 
       {/* Trust bar */}
       <section className="pb-20">
-        <div className="rounded-2xl bg-gradient-to-l from-brand-600 to-brand-700 p-8 sm:p-10 text-center text-white">
+        <div className="rounded-2xl bg-gradient-to-l from-brand-600 to-brand-700 p-8 sm:p-10 text-center text-white animate-fade-in">
           <Shield className="mx-auto h-8 w-8 opacity-80" />
           <h3 className="mt-3 text-xl font-bold">מחירים מעודכנים, השוואה אמיתית</h3>
           <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-white/80">
