@@ -67,6 +67,29 @@ const BRAND_MAP: Record<string, string> = {
   'מקבי': 'מקבי',
   'נביעות': 'נביעות',
   'מי עדן': 'מי עדן',
+  'לינדט': 'לינדט',
+  'פרה': 'פרה',
+  'מילקה': 'מילקה',
+  'קדבורי': 'קדבורי',
+  'ויסוצקי': 'ויסוצקי',
+  'כרמל': 'כרמל',
+  'יטבתה': 'יטבתה',
+  'גד': 'גד',
+  'זוגלובק': 'זוגלובק',
+  'טיב טעם': 'טיב טעם',
+  'אנגל': 'אנגל',
+  'ברילה': 'ברילה',
+  'דה צ\'צ\'י': 'דה צ\'צ\'י',
+  'הינץ': 'הינץ',
+  'קלוגס': 'קלוגס',
+  'תלמה': 'תלמה',
+  'פריגת': 'פריגת',
+  'ספרינג': 'ספרינג',
+  'סנפרוסט': 'סנפרוסט',
+  'ניצן': 'ניצן',
+  'אחלה': 'אחלה',
+  'שופרסל': 'שופרסל',
+  'XPO': 'שופרסל',
 };
 
 export function normalizeBrand(manufacturerName: string, itemName: string): string | null {
@@ -94,41 +117,60 @@ export function normalizeBrand(manufacturerName: string, itemName: string): stri
 }
 
 // ── Category Matchers ──
+// Helpers for common attribute extraction
+function extractWeight(name: string): string {
+  const g = name.match(/(\d+)\s*(?:גרם|גר|ג(?:['"]|$))/);
+  if (g) {
+    const val = parseInt(g[1]);
+    if (val >= 1000) return `${val / 1000} ק״ג`;
+    return `${val} גרם`;
+  }
+  const kg = name.match(/(\d+\.?\d*)\s*ק"?ג/);
+  if (kg) return `${kg[1]} ק״ג`;
+  return '';
+}
+
+function extractVolume(name: string): string {
+  const ml = name.match(/(\d+)\s*מ"?ל/);
+  if (ml) return `${ml[1]} מ"ל`;
+  const l = name.match(/(\d+\.?\d*)\s*ליטר/) || name.match(/(\d+\.?\d*)\s*ל(?:['"]|$|\s)/);
+  if (l) return `${l[1]} ליטר`;
+  return '';
+}
+
+function defaultExtract(item: ShufersalItem): Record<string, string> {
+  const name = item.ItemName;
+  const attrs: Record<string, string> = {};
+  const w = extractWeight(name);
+  if (w) attrs.weight = w;
+  const v = extractVolume(name);
+  if (v) attrs.volume = v;
+  return attrs;
+}
 
 const CATEGORY_MATCHERS: CategoryMatcher[] = [
+  // ── Dairy ──
   {
     categorySlug: 'milk',
     patterns: [/חלב/],
-    excludePatterns: [/שוקולד/, /חלב מרוכז/, /אבקת חלב/, /חלב קוקוס/, /קוטג/, /יוגורט/, /שמנת/, /גבינ/],
+    excludePatterns: [/שוקולד/, /שוקו/, /חלב מרוכז/, /אבקת חלב/, /חלב קוקוס/, /קוטג/, /יוגורט/, /שמנת/, /גבינ/],
     extractAttributes: (item: ShufersalItem) => {
       const name = item.ItemName;
       const attrs: Record<string, string> = {};
 
-      // Fat percentage
       const fatMatch = name.match(/(\d+)%/);
-      if (fatMatch) {
-        attrs.fat = `${fatMatch[1]}%`;
-      } else if (/דל שומן/.test(name)) {
-        attrs.fat = 'דל שומן';
-      }
+      if (fatMatch) attrs.fat = `${fatMatch[1]}%`;
+      else if (/דל שומן/.test(name)) attrs.fat = 'דל שומן';
 
-      // Volume in liters
       const volumeL = name.match(/(\d+\.?\d*)\s*ל[יטר']*$/u) || name.match(/(\d+\.?\d*)\s*ל['"]?/);
       if (volumeL) {
         const val = parseFloat(volumeL[1]);
-        if (val <= 3) {
-          attrs.volume = val === 1 ? '1 ליטר' : val === 2 ? '2 ליטר' : val === 0.5 ? '0.5 ליטר' : `${val} ליטר`;
-        }
+        if (val <= 3) attrs.volume = val === 1 ? '1 ליטר' : val === 2 ? '2 ליטר' : val === 0.5 ? '0.5 ליטר' : `${val} ליטר`;
       }
 
-      // Type
-      if (/לקטוז|ללא לקטוז|דל לקטוז/.test(name)) {
-        attrs.type = 'ללא לקטוז';
-      } else if (/אורגני/.test(name)) {
-        attrs.type = 'אורגני';
-      } else {
-        attrs.type = 'רגיל';
-      }
+      if (/לקטוז|ללא לקטוז|דל לקטוז/.test(name)) attrs.type = 'ללא לקטוז';
+      else if (/אורגני/.test(name)) attrs.type = 'אורגני';
+      else attrs.type = 'רגיל';
 
       return attrs;
     },
@@ -140,36 +182,14 @@ const CATEGORY_MATCHERS: CategoryMatcher[] = [
     extractAttributes: (item: ShufersalItem) => {
       const name = item.ItemName;
       const attrs: Record<string, string> = {};
-
-      // Size
-      if (/\bXL\b/i.test(name)) {
-        attrs.size = 'XL';
-      } else if (/\bL\b/.test(name)) {
-        attrs.size = 'L';
-      } else if (/\bM\b/.test(name)) {
-        attrs.size = 'M';
-      }
-
-      // Pack count
+      if (/\bXL\b/i.test(name)) attrs.size = 'XL';
+      else if (/\bL\b/.test(name)) attrs.size = 'L';
+      else if (/\bM\b/.test(name)) attrs.size = 'M';
       const countMatch = name.match(/(\d+)\s*ביצ/) || name.match(/ביצ\S*\s+(\d+)/);
-      if (countMatch) {
-        const count = parseInt(countMatch[1]);
-        if (count === 6 || count === 12) {
-          attrs.packCount = String(count);
-        }
-      }
-
-      // Type
-      if (/אורגני/.test(name)) {
-        attrs.type = 'אורגני';
-      } else if (/חופש/.test(name)) {
-        attrs.type = 'חופש';
-      } else if (/אומגה/.test(name)) {
-        attrs.type = 'רגיל';
-      } else {
-        attrs.type = 'רגיל';
-      }
-
+      if (countMatch) { const c = parseInt(countMatch[1]); if (c === 6 || c === 12) attrs.packCount = String(c); }
+      if (/אורגני/.test(name)) attrs.type = 'אורגני';
+      else if (/חופש/.test(name)) attrs.type = 'חופש';
+      else attrs.type = 'רגיל';
       return attrs;
     },
   },
@@ -644,44 +664,9 @@ const CATEGORY_MATCHERS: CategoryMatcher[] = [
   },
   {
     categorySlug: 'beverages',
-    patterns: [/מים מינרל|מיץ|סודה|קולה|בירה|שתייה|מים \d/],
-    excludePatterns: [/מי ורדים/, /מי סבון/, /סודה לשתייה/],
-    extractAttributes: (item: ShufersalItem) => {
-      const name = item.ItemName;
-      const attrs: Record<string, string> = {};
-
-      // Type
-      if (/מים/.test(name)) {
-        attrs.type = 'מים';
-      } else if (/מיץ/.test(name)) {
-        attrs.type = 'מיץ';
-      } else if (/סודה|קולה|ספרייט|פנטה/.test(name)) {
-        attrs.type = 'סודה';
-      } else if (/בירה|גולדסטאר|מקבי|קרלסברג|הייניקן/.test(name)) {
-        attrs.type = 'בירה';
-      } else {
-        attrs.type = 'מיץ';
-      }
-
-      // Volume
-      const volumeMl = name.match(/(\d+)\s*מ[״"']?ל/);
-      const volumeL = name.match(/(\d+\.?\d*)\s*ל[יטר']*/) || name.match(/(\d+\.?\d*)\s*ל$/);
-      if (volumeMl) {
-        const ml = parseInt(volumeMl[1]);
-        if (ml <= 500) attrs.volume = '500 מ״ל';
-        else if (ml <= 1000) attrs.volume = '1 ליטר';
-        else if (ml <= 1500) attrs.volume = '1.5 ליטר';
-        else attrs.volume = '2 ליטר';
-      } else if (volumeL) {
-        const l = parseFloat(volumeL[1]);
-        if (l <= 0.5) attrs.volume = '500 מ״ל';
-        else if (l <= 1) attrs.volume = '1 ליטר';
-        else if (l <= 1.5) attrs.volume = '1.5 ליטר';
-        else attrs.volume = '2 ליטר';
-      }
-
-      return attrs;
-    },
+    patterns: [/שתייה|משקה אנרגי|XL אנרגי|משקה ספורט/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
   },
   {
     categorySlug: 'cleaning',
@@ -1063,6 +1048,474 @@ const CATEGORY_MATCHERS: CategoryMatcher[] = [
       return attrs;
     },
   },
+
+  // ── NEW CATEGORIES for full coverage ──
+
+  // Chocolate (including abbreviated שוק.)
+  {
+    categorySlug: 'chocolate',
+    patterns: [/שוקולד/, /שוק\./, /שוקו(?!לד)/, /קקאו/, /טראפלס/, /לינד/, /מילקה/, /פררו/, /קינדר/, /מלטיזרס/, /מרס מיני/, /סניקרס/, /טוויקס/, /בונבונ/],
+    excludePatterns: [/מריחה|ממרח|משקה שוקו|גלידה/],
+    extractAttributes: defaultExtract,
+  },
+  // Cookies & biscuits (including abbreviated עוג.)
+  {
+    categorySlug: 'cookies',
+    patterns: [/עוגיו/, /עוג\./, /ביסקוויט/, /וופל/, /קרקר/, /פריכיות/, /בייגלה/, /צנימ/, /פת פריכה/, /לוטוס/, /Cookies/],
+    excludePatterns: [/עוגת/, /עוגה/],
+    extractAttributes: defaultExtract,
+  },
+  // Cakes & pastries
+  {
+    categorySlug: 'cakes',
+    patterns: [/עוגת/, /עוגה/, /קרואסון/, /מאפין/, /רולדה/, /קאפקייק/, /דונאט/, /סופגני/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Wine
+  {
+    categorySlug: 'wine',
+    patterns: [/יין/, /קברנה/, /מרלו/, /שרדונה/, /סוביניון/, /שיראז/, /רוזה/, /מוסקט/, /ריזלינג/],
+    excludePatterns: [/חומץ יין/],
+    extractAttributes: defaultExtract,
+  },
+  // Beer
+  {
+    categorySlug: 'beer',
+    patterns: [/בירה/, /לאגר/, /גולדסטאר/, /מכבי/, /הייניקן/, /קרלסברג/, /טובורג/, /קורונה/, /סטלה/, /IPA/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Soft drinks
+  {
+    categorySlug: 'soft-drinks',
+    patterns: [/קולה/, /ספרייט/, /פאנטה/, /שוופס/, /פריגת/, /טמפו/, /סודה/, /RC קולה/, /ד[ר]\.?\s*פפר/, /פנטה/, /7UP/, /נביעות\+/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Water
+  {
+    categorySlug: 'water',
+    patterns: [/מים מינרל/, /מי עדן/, /נביעות(?!\+)/, /מים \d/, /מי קוקוס/],
+    excludePatterns: [/מי ורדים/, /מי סבון/],
+    extractAttributes: defaultExtract,
+  },
+  // Juice
+  {
+    categorySlug: 'juice',
+    patterns: [/מיץ/, /נקטר/, /פריגת/],
+    excludePatterns: [/מיץ לימון.*מ"ל/],
+    extractAttributes: defaultExtract,
+  },
+  // Tea & infusions
+  {
+    categorySlug: 'tea',
+    patterns: [/\bתה\b/, /חליטת/, /חליטה/, /תה /, /ויסוצקי/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Hot drinks (cocoa mix, instant drinks)
+  {
+    categorySlug: 'hot-drinks',
+    patterns: [/אבקת שוקו/, /משקה שוקו/, /שוקו חם/, /חלב שוקו/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Hair care
+  {
+    categorySlug: 'hair-care',
+    patterns: [/שמפו/, /מרכך שיער/, /קונדישנר/, /מסכת שיער/, /צבע שיער/, /סרום שיער/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Soap & body care
+  {
+    categorySlug: 'soap-body',
+    patterns: [/סבון/, /ג'ל רחצה/, /שטיפת גוף/, /תחליב גוף/, /קרם גוף/, /קרם ידיים/],
+    excludePatterns: [/סבון כלים/, /נוזל כלים/],
+    extractAttributes: defaultExtract,
+  },
+  // Personal hygiene (deodorant, feminine, oral)
+  {
+    categorySlug: 'personal-hygiene',
+    patterns: [/דאודורנט/, /דאו\./, /רול און/, /אנטי פרס/, /קרפרי/, /מגן תחתון/, /טמפון/, /תחבושת/, /משחת שיניים/, /מברשת שיניים/, /שטיפת פה/, /סכיני גילוח/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Skincare & cosmetics
+  {
+    categorySlug: 'skincare',
+    patterns: [/קרם לחות/, /קרם פנים/, /סרום/, /היאלורון/, /דרמו/, /ניוואה/, /מסיר איפור/, /טונר/, /קרם עיניים/, /תחליב הגנה/, /קרם הגנה/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Deli / cold cuts
+  {
+    categorySlug: 'deli',
+    patterns: [/פסטרמה/, /נקניק/, /סלמי/, /נקניקיות/, /פרוסות.*עוף/, /פרוסות.*הודו/, /קבב/, /המבורגר/, /נקדניקים/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Fruits (fresh)
+  {
+    categorySlug: 'fruits',
+    patterns: [/תפוח(?!.*אדמה)/, /בננ/, /ענב/, /אפרסק/, /נקטרינ/, /שזיף/, /אגס/, /תות שדה/, /תותים/, /אבטיח/, /מלון/, /פומל/, /תפוז/, /קלמנ/, /מנדרינ/, /מנגו(?!.*רוטב)/, /אננס/, /קיווי/, /רימון/, /פסיפלורה/, /ליצ'י/, /אוכמני/, /דובדבן/, /פטל/],
+    excludePatterns: [/מיץ/, /ריבה/, /יין/, /חומץ/, /ממרח/, /סירופ/],
+    extractAttributes: (item: ShufersalItem) => {
+      const attrs: Record<string, string> = {};
+      const w = extractWeight(item.ItemName);
+      if (w) attrs.weight = w;
+      if (/במשקל|שקילה/.test(item.ItemName)) attrs.type = 'במשקל';
+      else if (/ארוז/.test(item.ItemName)) attrs.type = 'ארוז';
+      return attrs;
+    },
+  },
+  // Vegetables (fresh)
+  {
+    categorySlug: 'vegetables',
+    patterns: [/גזר/, /בטטה/, /תפוח.*אדמה/, /תפו"א/, /כרוב(?!ית)/, /כרובית/, /ברוקולי/, /חציל/, /קישוא/, /פלפל/, /בצל/, /שום(?!\s*רוטב)/, /חסה/, /סלרי/, /אפונה/, /פטריות/, /ארטישוק/, /אבוקדו/, /אספרגוס/, /סלק/, /צנונ/, /דלעת/, /לפת/, /קולרבי/],
+    excludePatterns: [/מיץ/, /צ'יפס/, /חטיף/, /ממרח/, /קפוא/, /שימור/],
+    extractAttributes: (item: ShufersalItem) => {
+      const attrs: Record<string, string> = {};
+      const w = extractWeight(item.ItemName);
+      if (w) attrs.weight = w;
+      if (/במשקל|שקילה/.test(item.ItemName)) attrs.type = 'במשקל';
+      else if (/ארוז/.test(item.ItemName)) attrs.type = 'ארוז';
+      return attrs;
+    },
+  },
+  // Fresh herbs
+  {
+    categorySlug: 'fresh-herbs',
+    patterns: [/פטרוזיליה/, /שמיר/, /כוסברה/, /נענע/, /בזיליקום(?!.*יבש)/, /רוזמרין/, /עשבי תיבול/, /רוקט/, /תרד/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Spices (dry)
+  {
+    categorySlug: 'spices',
+    patterns: [/תבלין/, /פפריקה/, /כמון/, /כורכום/, /קינמון/, /אורגנו/, /פלפל שחור/, /מלח(?!\s*ים)(?!.*רחצה)/, /זעתר/, /גרגר חרדל/, /ג'ינג'ר יבש/],
+    excludePatterns: [/מי מלח/, /סודיום/, /מלחיה/],
+    extractAttributes: defaultExtract,
+  },
+  // Soup
+  {
+    categorySlug: 'soup',
+    patterns: [/מרק/, /אבקת מרק/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Fish
+  {
+    categorySlug: 'fish',
+    patterns: [/פילה דג/, /סלמון/, /דג /, /דגים/, /אמנון/, /דניס/, /בורי/, /טרוט/, /מוסר/, /נסיכת הנילוס/, /בקלה/, /נילוס/],
+    excludePatterns: [/טונה/, /רוטב דגים/],
+    extractAttributes: defaultExtract,
+  },
+  // Meat (non-ground, non-chicken)
+  {
+    categorySlug: 'meat',
+    patterns: [/סטייק/, /אנטריקוט/, /צלעות/, /כבש/, /כבד/, /צוואר/, /שייטל/, /פלנקן/, /אסאדו/, /בשר(?!.*טחון)/],
+    excludePatterns: [/עוף/, /הודו/, /נקניק/, /פסטרמה/],
+    extractAttributes: defaultExtract,
+  },
+  // Corn & popcorn
+  {
+    categorySlug: 'corn',
+    patterns: [/תירס/, /פופקורן/],
+    excludePatterns: [/שמן תירס/],
+    extractAttributes: defaultExtract,
+  },
+  // Olives & pickles
+  {
+    categorySlug: 'olives-pickles',
+    patterns: [/זית/, /חמוצים/, /מלפפון.*חמוץ/, /כבוש/, /חמוציי/, /חמוצי(?!ם)/],
+    excludePatterns: [/שמן.*זית/],
+    extractAttributes: defaultExtract,
+  },
+  // Nuts & seeds
+  {
+    categorySlug: 'nuts',
+    patterns: [/אגוז/, /שקד/, /בוטנים/, /פיסטוק/, /קשיו/, /פקאן/, /גרעיני/, /חמניות/, /אגוזי/, /שקדים/, /מיקס אגוז/],
+    excludePatterns: [/חמאת בוטנים/, /ממרח/],
+    extractAttributes: defaultExtract,
+  },
+  // Salads (prepared)
+  {
+    categorySlug: 'salads',
+    patterns: [/סלט(?!.*כלי)/],
+    excludePatterns: [/מלפפון/, /עגבני/],
+    extractAttributes: defaultExtract,
+  },
+  // Cream desserts
+  {
+    categorySlug: 'cream-desserts',
+    patterns: [/קרם/, /מוס שוקולד/, /פודינג/, /דנט/, /מילקי/, /ג'לי/],
+    excludePatterns: [/קרם לחות/, /קרם פנים/, /קרם גוף/, /קרם ידיים/, /קרם עיניים/, /קרם הגנה/],
+    extractAttributes: defaultExtract,
+  },
+  // Candy & sweets
+  {
+    categorySlug: 'candy',
+    patterns: [/סוכריות/, /חמצוצים/, /מנטוס/, /מסטיק/, /גומי/, /ממתק/, /סוכרי/, /טופי/, /מנטה/],
+    excludePatterns: [/סוכר/],
+    extractAttributes: defaultExtract,
+  },
+  // Dried fruits
+  {
+    categorySlug: 'dried-fruits',
+    patterns: [/תמר/, /צימוק/, /פירות יבש/, /חמוציות/, /שזיפים מיובש/, /משמש מיובש/, /תאנים מיובש/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Paper products
+  {
+    categorySlug: 'paper-products',
+    patterns: [/מגבונ/, /טישו/, /קלינקס/, /מפיות/, /נייר סופג/, /נייר אלומיניום/, /נייר אפייה/, /שקיות אשפה/, /נייר כסף/],
+    excludePatterns: [/נייר טואלט/],
+    extractAttributes: defaultExtract,
+  },
+  // Couscous & ptitim
+  {
+    categorySlug: 'couscous',
+    patterns: [/קוסקוס/, /פתיתים/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Halva
+  {
+    categorySlug: 'halva',
+    patterns: [/חלו[ו]?ה/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Vegan / plant-based
+  {
+    categorySlug: 'vegan',
+    patterns: [/טופו/, /ויגן/, /צמחוני/, /אלפרו/, /על בסיס צמחי/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Pet food
+  {
+    categorySlug: 'pet-food',
+    patterns: [/מזון.*כלב/, /מזון.*חתול/, /חטיף.*כלב/, /חטיף.*חתול/, /פרפקט/, /בונזו/, /ויסקס/, /פריסקיז/, /פנסי פיסט/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Disposables
+  {
+    categorySlug: 'disposables',
+    patterns: [/חד פעמי/, /כוסות פלסט/, /צלחות/, /סכום/, /מפת שולחן/],
+    excludePatterns: [/סכיני גילוח/],
+    extractAttributes: defaultExtract,
+  },
+  // Ice cream
+  {
+    categorySlug: 'ice-cream',
+    patterns: [/גלידה/, /גלידת/, /שלגון/, /שלגוני/, /מגנום/, /קורנטו/, /ארטיק/, /plombir/i],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+
+  // ── Additional patterns to reduce "general" ──
+
+  // Snacks - expanded (abbreviated חט. and international brands)
+  {
+    categorySlug: 'snacks',
+    patterns: [/חט\./, /נייטשר וואלי/, /קורני/, /חטיפי מרס/, /חטיפי סניקרס/, /חטיפי טוויקס/, /מיני מיקס/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Cheese - expanded (international cheeses)
+  {
+    categorySlug: 'cheese',
+    patterns: [/קירי/, /קממבר/, /פטה/, /פרמג'נו/, /מותכת/, /בסגנון פטה/, /בסגנון פרמג/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Cleaning - expanded (international brands)
+  {
+    categorySlug: 'cleaning',
+    patterns: [/פיירי/, /נ\.כלים/, /אירויק/, /מרכך כביסה/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Spreads - expanded (peanut butter abbreviated)
+  {
+    categorySlug: 'spreads',
+    patterns: [/חמאת בוטנ/, /סקיפי/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Candy - expanded (orbit, mentos etc)
+  {
+    categorySlug: 'candy',
+    patterns: [/אורביט/, /crazy bee/, /בים בום/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Personal hygiene - expanded (oral care, feminine)
+  {
+    categorySlug: 'personal-hygiene',
+    patterns: [/ליסטרין/, /אורל בי/, /טמפקס/, /אולוויז/, /קוטקס/, /אקוהפרש/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Hair care - expanded
+  {
+    categorySlug: 'hair-care',
+    patterns: [/אלביב/, /אלנט/, /ספריי.*שיער/, /מסכה.*שיער/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Wine - expanded (spirits/alcohol)
+  {
+    categorySlug: 'wine',
+    patterns: [/וודקה/, /וויסקי/, /ג'ין /, /רום /, /טקילה/, /ייגרמייסטר/, /סמירנוף/, /גרנטס/, /גריי גוס/, /גוני ווקר/, /בריזר/, /קוקטייל/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Water - expanded
+  {
+    categorySlug: 'water',
+    patterns: [/מים בתוספת/, /קמבוצ'ה/, /מונסטר אנרג/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Fish - expanded (herring, caviar)
+  {
+    categorySlug: 'fish',
+    patterns: [/הרינג/, /קוויאר/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Spreads - condensed milk
+  {
+    categorySlug: 'spreads',
+    patterns: [/חלב מרוכז/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Cream desserts - expanded
+  {
+    categorySlug: 'cream-desserts',
+    patterns: [/מעדן/, /קינוח/, /פודינג/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Tea - expanded
+  {
+    categorySlug: 'tea',
+    patterns: [/פומפדור/, /חלי\./],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Condiments - more sauces
+  {
+    categorySlug: 'condiments',
+    patterns: [/רוטב(?!.*עגבני)/, /סירופ/],
+    excludePatterns: [/רוטב דגים/],
+    extractAttributes: defaultExtract,
+  },
+  // Pasta - expanded (noodles, dough)
+  {
+    categorySlug: 'pasta',
+    patterns: [/אטריות/, /נודלס/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Bread - expanded (matzot, challah, puff pastry)
+  {
+    categorySlug: 'bread',
+    patterns: [/מצות/, /חלה(?!.*(חלי|קמומיל))/, /בצק/, /פתית/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Vegan - expanded (soy milk, oat milk, plant-based)
+  {
+    categorySlug: 'vegan',
+    patterns: [/משקה סויה/, /משקה ש\.שועל/, /בריסטה.*מילק/, /צמחית/, /טבעונית/, /צהובה טבעונית/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Cleaning - expanded (laundry, dish soap)
+  {
+    categorySlug: 'cleaning',
+    patterns: [/א\.כביסה/, /מרכך כ\./, /ג'ל כביסה/, /אריאל/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Coffee - expanded (starbucks bottled, instant)
+  {
+    categorySlug: 'coffee',
+    patterns: [/סטארבקס/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Frozen - expanded (schnitzel, pizza)
+  {
+    categorySlug: 'frozen',
+    patterns: [/שניצל(?!.*קפוא)/, /בורקס/, /פיצה/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Personal hygiene - more oral care
+  {
+    categorySlug: 'personal-hygiene',
+    patterns: [/קולגייט/, /מברשת.*שיניים/, /מברשות.*שיניים/, /צמר גפן/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Vegetables - more specific items
+  {
+    categorySlug: 'vegetables',
+    patterns: [/צנון/, /קולורבי/, /חזרת/, /שומר/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Dried fruits - expanded
+  {
+    categorySlug: 'dried-fruits',
+    patterns: [/דובדבנים.*מיובש/, /משמש.*מיובש/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Snacks - expanded (cereal bars, hot dogs)
+  {
+    categorySlug: 'snacks',
+    patterns: [/חטיפי דגנים/, /הוטפופ/, /ס\.גלי/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Candy - expanded
+  {
+    categorySlug: 'candy',
+    patterns: [/סוכ\./, /סוכריות מגה/, /ורטר/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Fish - smoked
+  {
+    categorySlug: 'fish',
+    patterns: [/פורל מעושן/, /פילה.*מעושן/],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
+  // Cheese - more types
+  {
+    categorySlug: 'cheese',
+    patterns: [/בולגרית/, /דנאבלו/, /שמנת(?!.*צמחית)/],
+    excludePatterns: [/קוטג/],
+    extractAttributes: defaultExtract,
+  },
+  // Yogurt - expanded
+  {
+    categorySlug: 'yogurt',
+    patterns: [/יוג\./],
+    excludePatterns: [],
+    extractAttributes: defaultExtract,
+  },
 ];
 
 // ── Product Name Cleanup ──
@@ -1133,6 +1586,17 @@ function findLatestGzFile(dataDir: string, chainId: string, prefix: string = 'Pr
     .reverse();
 
   return files.length > 0 ? path.join(dataDir, files[0]) : null;
+}
+
+function findAllGzFiles(dataDir: string, chainId: string, prefix: string = 'PriceFull'): string[] {
+  try {
+    return fs.readdirSync(dataDir)
+      .filter(f => f.startsWith(`${prefix}${chainId}`) && f.endsWith('.gz'))
+      .sort()
+      .map(f => path.join(dataDir, f));
+  } catch {
+    return [];
+  }
 }
 
 // ── PromoFull Types and Parser ──
@@ -1292,7 +1756,13 @@ export function matchCategory(item: ShufersalItem): CategoryMatch | null {
     };
   }
 
-  return null;
+  // Fallback: assign to 'general' category so ALL products are ingested
+  const brand = normalizeBrand(item.ManufacturerName, item.ItemName);
+  return {
+    categorySlug: 'general',
+    attributes: defaultExtract(item),
+    brand,
+  };
 }
 
 // ── Provider ──
@@ -1325,11 +1795,11 @@ export class ShufersalProvider implements IngestionProvider {
 
     log.info(`Starting Shufersal file ingestion for ${supermarket.name}`, { supermarketId });
 
-    // 1. Find the latest GZ file
+    // 1. Find ALL GZ files for this chain (not just latest)
     const dataDir = path.resolve(process.cwd(), 'data');
-    const gzFile = findLatestGzFile(dataDir, SHUFERSAL_CHAIN_ID);
+    const gzFiles = findAllGzFiles(dataDir, SHUFERSAL_CHAIN_ID);
 
-    if (!gzFile) {
+    if (gzFiles.length === 0) {
       return {
         supermarketId,
         supermarketName: supermarket.name,
@@ -1342,14 +1812,26 @@ export class ShufersalProvider implements IngestionProvider {
       };
     }
 
-    log.info(`Reading file: ${gzFile}`);
+    log.info(`Found ${gzFiles.length} data files`);
 
-    // 2. Parse XML
+    // 2. Parse XML from all files, deduplicating by ItemCode
     let items: ShufersalItem[];
     try {
-      const xml = readGzFile(gzFile);
-      items = parseXmlItems(xml);
-      log.info(`Parsed ${items.length} items from XML`);
+      const allItems: ShufersalItem[] = [];
+      const seenCodes = new Set<string>();
+      for (const gzFile of gzFiles) {
+        log.info(`Reading file: ${gzFile}`);
+        const xml = readGzFile(gzFile);
+        const fileItems = parseXmlItems(xml);
+        for (const item of fileItems) {
+          if (!seenCodes.has(item.ItemCode)) {
+            seenCodes.add(item.ItemCode);
+            allItems.push(item);
+          }
+        }
+      }
+      items = allItems;
+      log.info(`Parsed ${items.length} unique items from ${gzFiles.length} files`);
     } catch (err) {
       return {
         supermarketId,
@@ -1744,6 +2226,55 @@ export function buildCanonicalName(
     'cleaning': 'ניקיון',
     'frozen': 'קפואים',
     'cheese': 'גבינות',
+    'butter': 'חמאה',
+    'flour': 'קמח',
+    'canned-tomatoes': 'עגבניות שימורים',
+    'spreads': 'ממרחים',
+    'condiments': 'רטבים',
+    'legumes': 'קטניות',
+    'ground-meat': 'בשר טחון',
+    'toilet-paper': 'נייר טואלט',
+    'diapers': 'חיתולים',
+    'baby-food': 'מזון תינוקות',
+    'tehina': 'טחינה',
+    'hummus': 'חומוס',
+    'chocolate': 'שוקולד',
+    'cookies': 'עוגיות',
+    'cakes': 'מאפים',
+    'wine': 'יין',
+    'beer': 'בירה',
+    'soft-drinks': 'משקה קל',
+    'water': 'מים',
+    'juice': 'מיץ',
+    'tea': 'תה',
+    'hot-drinks': 'משקה חם',
+    'hair-care': 'טיפוח שיער',
+    'soap-body': 'סבון',
+    'personal-hygiene': 'היגיינה',
+    'skincare': 'טיפוח',
+    'deli': 'מעדנייה',
+    'fruits': 'פירות',
+    'vegetables': 'ירקות',
+    'fresh-herbs': 'עשבי תיבול',
+    'spices': 'תבלינים',
+    'soup': 'מרק',
+    'fish': 'דגים',
+    'meat': 'בשר',
+    'corn': 'תירס',
+    'olives-pickles': 'זיתים וחמוצים',
+    'nuts': 'אגוזים',
+    'salads': 'סלטים',
+    'cream-desserts': 'קינוחים',
+    'candy': 'ממתקים',
+    'dried-fruits': 'פירות יבשים',
+    'paper-products': 'מוצרי נייר',
+    'couscous': 'קוסקוס',
+    'halva': 'חלווה',
+    'vegan': 'טבעוני',
+    'pet-food': 'מזון חיות',
+    'disposables': 'חד פעמי',
+    'ice-cream': 'גלידה',
+    'general': 'כללי',
   };
 
   const parts: string[] = [];

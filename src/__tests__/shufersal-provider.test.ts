@@ -163,9 +163,10 @@ describe('matchCategory', () => {
     }
   });
 
-  it('returns null for unmatched items', () => {
+  it('falls back to general category for unmatched items', () => {
     const result = matchCategory(makeItem('מגבות נייר סנו'));
-    expect(result).toBeNull();
+    expect(result).not.toBeNull();
+    expect(result!.categorySlug).toBe('general');
   });
 });
 
