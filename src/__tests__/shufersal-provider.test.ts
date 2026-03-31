@@ -4,7 +4,11 @@ import {
   cleanProductName,
   normalizeBrand,
   buildCanonicalName,
+  parsePromoXml,
+  isPromoActive,
+  buildPromoDescription,
   ShufersalItem,
+  Promotion,
 } from '@/lib/ingestion/shufersal-provider';
 
 describe('parseXmlItems', () => {
@@ -241,5 +245,189 @@ describe('buildCanonicalName', () => {
     const name = buildCanonicalName('bread', { type: 'לבן', weight: '750 גרם' }, null);
     expect(name).toContain('לחם');
     expect(name).not.toContain('null');
+  });
+});
+
+describe('parsePromoXml', () => {
+  it('parses a single promotion with items', () => {
+    const xml = `
+      <root>
+        <Promotions>
+          <Promotion>
+            <PromotionId>1001</PromotionId>
+            <PromotionDescription>2 ב-10 ש"ח</PromotionDescription>
+            <PromotionStartDate>2026-03-01 00:00</PromotionStartDate>
+            <PromotionEndDate>2026-04-30 23:59</PromotionEndDate>
+            <DiscountType>1</DiscountType>
+            <DiscountRate>10</DiscountRate>
+            <MinQty>2</MinQty>
+            <MaxQty>0</MaxQty>
+            <RewardType>1</RewardType>
+            <PromotionItems>
+              <Item>
+                <ItemCode>7290000001</ItemCode>
+                <ItemType>1</ItemType>
+                <IsGiftItem>0</IsGiftItem>
+              </Item>
+              <Item>
+                <ItemCode>7290000002</ItemCode>
+                <ItemType>1</ItemType>
+                <IsGiftItem>0</IsGiftItem>
+              </Item>
+            </PromotionItems>
+          </Promotion>
+        </Promotions>
+      </root>`;
+
+    const promos = parsePromoXml(xml);
+    expect(promos).toHaveLength(1);
+    expect(promos[0].PromotionId).toBe('1001');
+    expect(promos[0].PromotionDescription).toBe('2 ב-10 ש"ח');
+    expect(promos[0].items).toHaveLength(2);
+    expect(promos[0].items[0].ItemCode).toBe('7290000001');
+    expect(promos[0].items[1].ItemCode).toBe('7290000002');
+  });
+
+  it('parses multiple promotions', () => {
+    const xml = `
+      <root>
+        <Promotions>
+          <Promotion>
+            <PromotionId>1</PromotionId>
+            <PromotionDescription>מבצע א</PromotionDescription>
+            <PromotionStartDate>2026-03-01</PromotionStartDate>
+            <PromotionEndDate>2026-04-01</PromotionEndDate>
+            <DiscountType>1</DiscountType>
+            <DiscountRate>0</DiscountRate>
+            <MinQty>1</MinQty>
+            <MaxQty>0</MaxQty>
+            <RewardType>1</RewardType>
+            <PromotionItems>
+              <Item><ItemCode>001</ItemCode><ItemType>1</ItemType><IsGiftItem>0</IsGiftItem></Item>
+            </PromotionItems>
+          </Promotion>
+          <Promotion>
+            <PromotionId>2</PromotionId>
+            <PromotionDescription>מבצע ב</PromotionDescription>
+            <PromotionStartDate>2026-03-01</PromotionStartDate>
+            <PromotionEndDate>2026-04-01</PromotionEndDate>
+            <DiscountType>2</DiscountType>
+            <DiscountRate>5</DiscountRate>
+            <MinQty>1</MinQty>
+            <MaxQty>0</MaxQty>
+            <RewardType>1</RewardType>
+            <PromotionItems>
+              <Item><ItemCode>002</ItemCode><ItemType>1</ItemType><IsGiftItem>0</IsGiftItem></Item>
+            </PromotionItems>
+          </Promotion>
+        </Promotions>
+      </root>`;
+
+    const promos = parsePromoXml(xml);
+    expect(promos).toHaveLength(2);
+    expect(promos[0].PromotionId).toBe('1');
+    expect(promos[1].PromotionId).toBe('2');
+  });
+
+  it('returns empty array for no promotions', () => {
+    const xml = '<root><Promotions></Promotions></root>';
+    expect(parsePromoXml(xml)).toHaveLength(0);
+  });
+
+  it('handles promotion with no items', () => {
+    const xml = `
+      <root>
+        <Promotions>
+          <Promotion>
+            <PromotionId>1</PromotionId>
+            <PromotionDescription>Empty promo</PromotionDescription>
+            <PromotionStartDate>2026-03-01</PromotionStartDate>
+            <PromotionEndDate>2026-04-01</PromotionEndDate>
+            <DiscountType>1</DiscountType>
+            <DiscountRate>0</DiscountRate>
+            <MinQty>1</MinQty>
+            <MaxQty>0</MaxQty>
+            <RewardType>1</RewardType>
+          </Promotion>
+        </Promotions>
+      </root>`;
+
+    const promos = parsePromoXml(xml);
+    expect(promos).toHaveLength(1);
+    expect(promos[0].items).toHaveLength(0);
+  });
+});
+
+describe('isPromoActive', () => {
+  const makePromo = (start: string, end: string): Promotion => ({
+    PromotionId: '1',
+    PromotionDescription: 'Test',
+    PromotionStartDate: start,
+    PromotionEndDate: end,
+    DiscountType: '1',
+    DiscountRate: '10',
+    MinQty: '1',
+    MaxQty: '0',
+    RewardType: '1',
+    items: [],
+  });
+
+  it('returns true for active promotion', () => {
+    expect(isPromoActive(makePromo('2026-01-01', '2026-12-31'), new Date('2026-06-15'))).toBe(true);
+  });
+
+  it('returns false for expired promotion', () => {
+    expect(isPromoActive(makePromo('2025-01-01', '2025-12-31'), new Date('2026-06-15'))).toBe(false);
+  });
+
+  it('returns false for future promotion', () => {
+    expect(isPromoActive(makePromo('2027-01-01', '2027-12-31'), new Date('2026-06-15'))).toBe(false);
+  });
+
+  it('returns true on exact start date', () => {
+    expect(isPromoActive(makePromo('2026-06-15', '2026-07-15'), new Date('2026-06-15'))).toBe(true);
+  });
+
+  it('returns true on exact end date', () => {
+    expect(isPromoActive(makePromo('2026-05-15', '2026-06-15'), new Date('2026-06-15'))).toBe(true);
+  });
+
+  it('returns false for invalid dates', () => {
+    expect(isPromoActive(makePromo('not-a-date', 'also-not'), new Date())).toBe(false);
+  });
+});
+
+describe('buildPromoDescription', () => {
+  const makePromo = (desc: string, discountType: string, rate: string, minQty: string): Promotion => ({
+    PromotionId: '1',
+    PromotionDescription: desc,
+    PromotionStartDate: '2026-01-01',
+    PromotionEndDate: '2026-12-31',
+    DiscountType: discountType,
+    DiscountRate: rate,
+    MinQty: minQty,
+    MaxQty: '0',
+    RewardType: '1',
+    items: [],
+  });
+
+  it('uses description when available', () => {
+    expect(buildPromoDescription(makePromo('2 ב-10 ש"ח', '1', '10', '2'))).toBe('2 ב-10 ש"ח');
+  });
+
+  it('builds percentage description', () => {
+    expect(buildPromoDescription(makePromo('', '1', '15', '1'))).toBe('15% הנחה');
+  });
+
+  it('builds fixed amount description', () => {
+    expect(buildPromoDescription(makePromo('', '2', '5', '1'))).toBe('₪5 הנחה');
+  });
+
+  it('builds multi-quantity description', () => {
+    expect(buildPromoDescription(makePromo('', '3', '20', '3'))).toBe('3 יח׳ ב-₪20');
+  });
+
+  it('falls back to generic description', () => {
+    expect(buildPromoDescription(makePromo('', '1', '0', '1'))).toBe('מבצע');
   });
 });

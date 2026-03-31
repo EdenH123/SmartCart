@@ -857,13 +857,146 @@ function readGzFile(filePath: string): string {
   return decompressed.toString('utf-8');
 }
 
-function findLatestGzFile(dataDir: string, chainId: string): string | null {
+function findLatestGzFile(dataDir: string, chainId: string, prefix: string = 'PriceFull'): string | null {
   const files = fs.readdirSync(dataDir)
-    .filter(f => f.startsWith(`PriceFull${chainId}`) && f.endsWith('.gz'))
+    .filter(f => f.startsWith(`${prefix}${chainId}`) && f.endsWith('.gz'))
     .sort()
     .reverse();
 
   return files.length > 0 ? path.join(dataDir, files[0]) : null;
+}
+
+// ── PromoFull Types and Parser ──
+
+export interface PromoItem {
+  ItemCode: string;
+  ItemType: string; // "0" = internal code, "1" = barcode
+  IsGiftItem: string;
+}
+
+export interface Promotion {
+  PromotionId: string;
+  PromotionDescription: string;
+  PromotionStartDate: string;
+  PromotionEndDate: string;
+  DiscountType: string; // "1" = percentage, "2" = fixed amount, etc.
+  DiscountRate: string;
+  MinQty: string;
+  MaxQty: string;
+  RewardType: string;
+  items: PromoItem[];
+}
+
+/**
+ * Parse PromoFull XML content into structured Promotion objects.
+ *
+ * PromoFull XML structure (Israeli Price Transparency Law):
+ * <root>
+ *   <Promotions>
+ *     <Promotion>
+ *       <PromotionId>...</PromotionId>
+ *       <PromotionDescription>...</PromotionDescription>
+ *       <PromotionStartDate>...</PromotionStartDate>
+ *       <PromotionEndDate>...</PromotionEndDate>
+ *       <DiscountType>...</DiscountType>
+ *       <DiscountRate>...</DiscountRate>
+ *       <MinQty>...</MinQty>
+ *       <MaxQty>...</MaxQty>
+ *       <RewardType>...</RewardType>
+ *       <PromotionItems>
+ *         <Item>
+ *           <ItemCode>...</ItemCode>
+ *           <ItemType>...</ItemType>
+ *           <IsGiftItem>...</IsGiftItem>
+ *         </Item>
+ *       </PromotionItems>
+ *     </Promotion>
+ *   </Promotions>
+ * </root>
+ */
+export function parsePromoXml(xml: string): Promotion[] {
+  const promotions: Promotion[] = [];
+  const promoRegex = /<Promotion>([\s\S]*?)<\/Promotion>/g;
+  let promoMatch: RegExpExecArray | null;
+
+  while ((promoMatch = promoRegex.exec(xml)) !== null) {
+    const block = promoMatch[1];
+
+    const getField = (name: string): string => {
+      const m = block.match(new RegExp(`<${name}>([\\s\\S]*?)<\\/${name}>`));
+      return m ? m[1].trim() : '';
+    };
+
+    // Parse promotion items
+    const items: PromoItem[] = [];
+    const itemsBlock = block.match(/<PromotionItems>([\s\S]*?)<\/PromotionItems>/);
+    if (itemsBlock) {
+      const itemRegex = /<Item>([\s\S]*?)<\/Item>/g;
+      let itemMatch: RegExpExecArray | null;
+      while ((itemMatch = itemRegex.exec(itemsBlock[1])) !== null) {
+        const itemBlock = itemMatch[1];
+        const getItemField = (name: string): string => {
+          const m = itemBlock.match(new RegExp(`<${name}>([\\s\\S]*?)<\\/${name}>`));
+          return m ? m[1].trim() : '';
+        };
+        items.push({
+          ItemCode: getItemField('ItemCode'),
+          ItemType: getItemField('ItemType'),
+          IsGiftItem: getItemField('IsGiftItem'),
+        });
+      }
+    }
+
+    promotions.push({
+      PromotionId: getField('PromotionId'),
+      PromotionDescription: getField('PromotionDescription'),
+      PromotionStartDate: getField('PromotionStartDate'),
+      PromotionEndDate: getField('PromotionEndDate'),
+      DiscountType: getField('DiscountType'),
+      DiscountRate: getField('DiscountRate'),
+      MinQty: getField('MinQty'),
+      MaxQty: getField('MaxQty'),
+      RewardType: getField('RewardType'),
+      items,
+    });
+  }
+
+  return promotions;
+}
+
+/**
+ * Check if a promotion is currently active based on its date range.
+ */
+export function isPromoActive(promo: Promotion, now: Date = new Date()): boolean {
+  try {
+    const start = new Date(promo.PromotionStartDate.replace(' ', 'T'));
+    const end = new Date(promo.PromotionEndDate.replace(' ', 'T'));
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return false;
+    return now >= start && now <= end;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Build a Hebrew promo description string from a Promotion object.
+ */
+export function buildPromoDescription(promo: Promotion): string {
+  const desc = promo.PromotionDescription.trim();
+  if (desc) return desc;
+
+  // Fall back to building from fields
+  const rate = parseFloat(promo.DiscountRate);
+  if (isNaN(rate) || rate <= 0) return 'מבצע';
+
+  const discountType = promo.DiscountType;
+  if (discountType === '1') return `${rate}% הנחה`;
+  if (discountType === '2') return `₪${rate} הנחה`;
+
+  const minQty = parseInt(promo.MinQty);
+  if (minQty > 1) return `${minQty} יח׳ ב-₪${rate}`;
+
+  return `מבצע - ₪${rate}`;
 }
 
 // ── Category Matching ──
@@ -1099,6 +1232,139 @@ export class ShufersalProvider implements IngestionProvider {
       snapshotsCreated,
       promoCount,
       outOfStockCount,
+      errors,
+      durationMs,
+    };
+  }
+
+  /**
+   * Ingest promotions from a PromoFull GZ file.
+   * Matches promotions to existing SupermarketProducts by ItemCode (externalId).
+   * Only applies currently active promotions.
+   */
+  async ingestPromos(supermarketId: string): Promise<{
+    totalPromotions: number;
+    activePromotions: number;
+    productsUpdated: number;
+    errors: string[];
+    durationMs: number;
+  }> {
+    const start = Date.now();
+    const errors: string[] = [];
+
+    const supermarket = await prisma.supermarket.findUnique({
+      where: { id: supermarketId },
+    });
+
+    if (!supermarket) {
+      return { totalPromotions: 0, activePromotions: 0, productsUpdated: 0, errors: [`Supermarket ${supermarketId} not found`], durationMs: Date.now() - start };
+    }
+
+    // 1. Find PromoFull GZ file
+    const dataDir = path.join(process.cwd(), 'data');
+    const promoFile = findLatestGzFile(dataDir, SHUFERSAL_CHAIN_ID, 'PromoFull');
+
+    if (!promoFile) {
+      return { totalPromotions: 0, activePromotions: 0, productsUpdated: 0, errors: [`No PromoFull GZ file found for chain ${SHUFERSAL_CHAIN_ID} in ${dataDir}`], durationMs: Date.now() - start };
+    }
+
+    log.info(`Reading promo file: ${promoFile}`);
+
+    // 2. Parse XML
+    const xml = readGzFile(promoFile);
+    const promotions = parsePromoXml(xml);
+    log.info(`Parsed ${promotions.length} promotions`);
+
+    // 3. Filter to active promotions
+    const now = new Date();
+    const activePromos = promotions.filter(p => isPromoActive(p, now));
+    log.info(`${activePromos.length} active promotions (of ${promotions.length} total)`);
+
+    // 4. Build ItemCode → promo description map
+    // An item can appear in multiple promos; keep the one with the best description
+    const promoByItemCode = new Map<string, string>();
+    for (const promo of activePromos) {
+      const desc = buildPromoDescription(promo);
+      for (const item of promo.items) {
+        if (item.IsGiftItem === '1') continue; // skip gift items
+        const code = item.ItemCode.trim();
+        if (!code) continue;
+        // Keep the first (often best) promo for each item
+        if (!promoByItemCode.has(code)) {
+          promoByItemCode.set(code, desc);
+        }
+      }
+    }
+
+    log.info(`${promoByItemCode.size} unique items with active promotions`);
+
+    // 5. First, reset all promos for this supermarket (remove expired promos)
+    await prisma.supermarketProduct.updateMany({
+      where: { supermarketId, isPromo: true },
+      data: { isPromo: false, promoDescription: null },
+    });
+
+    // 6. Apply active promos to matching products
+    let productsUpdated = 0;
+
+    for (const [itemCode, promoDesc] of promoByItemCode) {
+      try {
+        const externalId = `shufersal-${itemCode}`;
+
+        // Find the SupermarketProduct by its externalId stored in metadata
+        const product = await prisma.supermarketProduct.findFirst({
+          where: {
+            supermarketId,
+            metadata: { contains: `"externalId":"${externalId}"` },
+          },
+        });
+
+        if (!product) continue;
+
+        // Update the product with promo info
+        await prisma.supermarketProduct.update({
+          where: { id: product.id },
+          data: {
+            isPromo: true,
+            promoDescription: promoDesc,
+          },
+        });
+
+        // Also update the latest price snapshot if it exists
+        const latestSnapshot = await prisma.priceSnapshot.findFirst({
+          where: { supermarketProductId: product.id },
+          orderBy: { capturedAt: 'desc' },
+        });
+
+        if (latestSnapshot) {
+          await prisma.priceSnapshot.update({
+            where: { id: latestSnapshot.id },
+            data: {
+              isPromo: true,
+              promoDescription: promoDesc,
+            },
+          });
+        }
+
+        productsUpdated++;
+      } catch (err) {
+        errors.push(`Failed to apply promo to item ${itemCode}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    const durationMs = Date.now() - start;
+    log.info(`Promo ingestion complete`, {
+      totalPromotions: promotions.length,
+      activePromotions: activePromos.length,
+      productsUpdated,
+      errorCount: errors.length,
+      durationMs,
+    });
+
+    return {
+      totalPromotions: promotions.length,
+      activePromotions: activePromos.length,
+      productsUpdated,
       errors,
       durationMs,
     };
