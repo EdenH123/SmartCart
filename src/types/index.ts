@@ -213,3 +213,43 @@ export interface PriceHistorySeries {
 }
 
 export type PriceHistoryData = PriceHistorySeries[];
+
+// ── Price Drop Notifications ──
+
+export interface PriceDrop {
+  productName: string;
+  supermarket: string;
+  oldPrice: number;
+  newPrice: number;
+  dropPercent: number;
+}
+
+// ── Spending Analytics ──
+
+export interface SupermarketCost {
+  supermarketName: string;
+  totalCost: number;
+}
+
+export interface CategorySpending {
+  categoryName: string;
+  amount: number;
+  percentage: number;
+}
+
+export interface SavingsOpportunity {
+  productName: string;
+  minPrice: number;
+  maxPrice: number;
+  savings: number;
+}
+
+export interface SpendingAnalytics {
+  totalItems: number;
+  supermarketCosts: SupermarketCost[];
+  categoryBreakdown: CategorySpending[];
+  savingsOpportunities: SavingsOpportunity[];
+  potentialMaxSavings: number;
+  cheapestSupermarket: string;
+  cheapestTotal: number;
+}

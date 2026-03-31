@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Trophy, AlertTriangle, ArrowRight, RefreshCw, TrendingDown, Clock, Info, LayoutGrid, TableProperties, ShoppingCart } from 'lucide-react';
 import { compareBasketAction } from '@/lib/actions';
 import { formatPrice, formatTimeAgo, isStale } from '@/lib/utils';
+import { ExportMenu } from '@/components/ExportMenu';
 import type { ComparisonResult, SupermarketComparison } from '@/types';
 
 export default function ComparePage() {
@@ -127,7 +128,22 @@ function ComparePageInner() {
       </Link>
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">השוואת מחירים</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900">השוואת מחירים</h1>
+          <ExportMenu
+            generateText={() => {
+              const lines = ['השוואת מחירים - סל חכם\n'];
+              result.comparisons.forEach((sm, i) => {
+                lines.push(`${i + 1}. ${sm.supermarketName}: ${formatPrice(sm.total)}`);
+              });
+              if (savings > 0) {
+                lines.push(`\nחיסכון: ${formatPrice(savings)}`);
+              }
+              return lines.join('\n');
+            }}
+            filename="comparison.txt"
+          />
+        </div>
         <div className="flex rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
           <button
             onClick={() => setViewMode('cards')}
