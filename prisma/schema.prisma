@@ -81,6 +81,7 @@ model SupermarketProduct {
   inStock            Boolean @default(true)
   isPromo            Boolean @default(false)
   promoDescription   String?
+  promoEndDate       DateTime? // When the promotion expires
   metadata           String  @default("{}") // JSON
   updatedAt          DateTime @default(now())
 

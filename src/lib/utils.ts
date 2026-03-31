@@ -25,6 +25,20 @@ export function formatTimeAgo(dateStr: string | null): string {
   return `לפני ${diffDay}י׳`;
 }
 
+export function formatPromoExpiry(endDateStr: string | null): string | null {
+  if (!endDateStr) return null;
+  const end = new Date(endDateStr);
+  if (isNaN(end.getTime())) return null;
+  const now = new Date();
+  const diffMs = end.getTime() - now.getTime();
+  if (diffMs < 0) return 'פג תוקף';
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'מסתיים היום';
+  if (diffDays === 1) return 'מסתיים מחר';
+  if (diffDays <= 7) return `עוד ${diffDays} ימים`;
+  return `עד ${end.toLocaleDateString('he-IL')}`;
+}
+
 export function buildDisplayName(
   categoryName: string,
   constraints: Record<string, unknown>

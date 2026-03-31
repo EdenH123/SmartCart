@@ -1280,18 +1280,24 @@ export class ShufersalProvider implements IngestionProvider {
     const activePromos = promotions.filter(p => isPromoActive(p, now));
     log.info(`${activePromos.length} active promotions (of ${promotions.length} total)`);
 
-    // 4. Build ItemCode → promo description map
+    // 4. Build ItemCode → promo info map (description + end date)
     // An item can appear in multiple promos; keep the one with the best description
-    const promoByItemCode = new Map<string, string>();
+    const promoByItemCode = new Map<string, { description: string; endDate: Date | null }>();
     for (const promo of activePromos) {
       const desc = buildPromoDescription(promo);
+      let endDate: Date | null = null;
+      try {
+        const parsed = new Date(promo.PromotionEndDate.replace(' ', 'T'));
+        if (!isNaN(parsed.getTime())) endDate = parsed;
+      } catch { /* ignore parse errors */ }
+
       for (const item of promo.items) {
         if (item.IsGiftItem === '1') continue; // skip gift items
         const code = item.ItemCode.trim();
         if (!code) continue;
         // Keep the first (often best) promo for each item
         if (!promoByItemCode.has(code)) {
-          promoByItemCode.set(code, desc);
+          promoByItemCode.set(code, { description: desc, endDate });
         }
       }
     }
@@ -1301,13 +1307,13 @@ export class ShufersalProvider implements IngestionProvider {
     // 5. First, reset all promos for this supermarket (remove expired promos)
     await prisma.supermarketProduct.updateMany({
       where: { supermarketId, isPromo: true },
-      data: { isPromo: false, promoDescription: null },
+      data: { isPromo: false, promoDescription: null, promoEndDate: null },
     });
 
     // 6. Apply active promos to matching products
     let productsUpdated = 0;
 
-    for (const [itemCode, promoDesc] of promoByItemCode) {
+    for (const [itemCode, promoInfo] of promoByItemCode) {
       try {
         const externalId = `shufersal-${itemCode}`;
 
@@ -1326,7 +1332,8 @@ export class ShufersalProvider implements IngestionProvider {
           where: { id: product.id },
           data: {
             isPromo: true,
-            promoDescription: promoDesc,
+            promoDescription: promoInfo.description,
+            promoEndDate: promoInfo.endDate,
           },
         });
 
@@ -1341,7 +1348,7 @@ export class ShufersalProvider implements IngestionProvider {
             where: { id: latestSnapshot.id },
             data: {
               isPromo: true,
-              promoDescription: promoDesc,
+              promoDescription: promoInfo.description,
             },
           });
         }

@@ -3,9 +3,9 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowRight, AlertTriangle, RefreshCw, Tag, Check, X as XIcon, Clock } from 'lucide-react';
+import { ArrowRight, AlertTriangle, RefreshCw, Tag, Check, X as XIcon, Clock, Timer } from 'lucide-react';
 import { compareBasketAction } from '@/lib/actions';
-import { formatPrice, formatTimeAgo } from '@/lib/utils';
+import { formatPrice, formatTimeAgo, formatPromoExpiry } from '@/lib/utils';
 import type { ComparisonResult, SupermarketComparison, ItemResolution } from '@/types';
 
 export default function BreakdownPage() {
@@ -181,6 +181,21 @@ function ItemRow({ item }: { item: ItemResolution }) {
                 {item.promoDescription}
               </span>
             )}
+            {item.isPromo && item.promoEndDate && (() => {
+              const expiry = formatPromoExpiry(item.promoEndDate);
+              if (!expiry) return null;
+              const isUrgent = (() => {
+                const end = new Date(item.promoEndDate!);
+                const diffDays = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                return diffDays <= 3;
+              })();
+              return (
+                <span className={`flex items-center gap-0.5 text-[10px] ${isUrgent ? 'text-red-500 font-medium' : 'text-amber-600'}`}>
+                  <Timer className="h-2.5 w-2.5" />
+                  {expiry}
+                </span>
+              );
+            })()}
             {isUnavailable && (
               <span className="badge-unavailable text-[10px]">לא זמין</span>
             )}

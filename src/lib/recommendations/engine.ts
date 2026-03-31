@@ -5,6 +5,8 @@ import type {
   OptimizationResult,
   OptimizedItem,
   UserConstraints,
+  SplitCartResult,
+  SplitCartItem,
 } from '@/types';
 
 // ── Input types (mirrors comparison engine shapes) ──
@@ -29,6 +31,7 @@ export interface ProductForOptimization {
   inStock: boolean;
   isPromo: boolean;
   promoDescription: string | null;
+  promoEndDate: string | null;
   canonicalProduct: {
     id: string;
     categoryId: string;
@@ -59,15 +62,22 @@ const PRICE_WEIGHT = 1.0;
 const ATTRIBUTE_DEVIATION_PENALTY = 5.0;
 const BRAND_CHANGE_PENALTY = 2.0;
 
+const PROMO_BONUS = -0.5; // Negative = lower score = preferred
+
 /**
  * Score a candidate product for optimization. Lower = better.
- * score = priceWeight * price + penalties
+ * score = priceWeight * price + penalties - promo bonus
  */
 export function optimizationScore(
   candidate: ProductForOptimization,
   item: BasketItemForOptimization
 ): number {
   let score = PRICE_WEIGHT * candidate.price;
+
+  // Bonus for promo products (slightly prefer them at similar prices)
+  if (candidate.isPromo) {
+    score += PROMO_BONUS;
+  }
 
   // Penalty for each non-matching attribute
   const constraints = item.userConstraints;
@@ -146,8 +156,10 @@ function findCheaperAlternatives(
 function findPromoOpportunities(
   item: BasketItemForOptimization,
   allProducts: ProductForOptimization[],
-  supermarket: SupermarketForOptimization
+  supermarket: SupermarketForOptimization,
+  currentProduct: ProductForOptimization | null
 ): Recommendation[] {
+  // Find promo products that match constraints
   const promoProducts = allProducts.filter(
     (p) =>
       p.canonicalProduct.categoryId === item.categoryId &&
@@ -160,19 +172,35 @@ function findPromoOpportunities(
 
   const cheapestPromo = promoProducts.sort((a, b) => a.price - b.price)[0];
 
-  // Find the current best non-promo
-  const regularProducts = allProducts.filter(
-    (p) =>
-      p.canonicalProduct.categoryId === item.categoryId &&
-      p.inStock &&
-      !p.isPromo &&
-      passesConstraints(p.canonicalProduct.metadata, item.userConstraints)
-  );
-  const cheapestRegular = regularProducts.sort((a, b) => a.price - b.price)[0];
+  // If user already has the promo product, no recommendation needed
+  if (currentProduct && currentProduct.id === cheapestPromo.id) return [];
 
-  if (!cheapestRegular || cheapestPromo.price >= cheapestRegular.price) return [];
+  // Compare against what user currently has, or the cheapest non-promo option
+  let comparePrice: number;
+  let compareName: string;
 
-  const savingsPerUnit = cheapestRegular.price - cheapestPromo.price;
+  if (currentProduct && !currentProduct.isPromo) {
+    // User has a non-promo product — compare against that
+    comparePrice = currentProduct.price;
+    compareName = currentProduct.externalName;
+  } else {
+    // Find cheapest non-promo for comparison baseline
+    const regularProducts = allProducts.filter(
+      (p) =>
+        p.canonicalProduct.categoryId === item.categoryId &&
+        p.inStock &&
+        !p.isPromo &&
+        passesConstraints(p.canonicalProduct.metadata, item.userConstraints)
+    );
+    if (regularProducts.length === 0) return [];
+    const cheapestRegular = regularProducts.sort((a, b) => a.price - b.price)[0];
+    comparePrice = cheapestRegular.price;
+    compareName = cheapestRegular.externalName;
+  }
+
+  if (cheapestPromo.price >= comparePrice) return [];
+
+  const savingsPerUnit = comparePrice - cheapestPromo.price;
   const totalSavings = savingsPerUnit * item.quantity;
   if (totalSavings < 0.05) return [];
 
@@ -180,10 +208,10 @@ function findPromoOpportunities(
     id: nextRecId(),
     type: 'promo',
     title: `נצלו מבצע על ${cheapestPromo.externalName}`,
-    description: `${cheapestPromo.promoDescription ?? 'מחיר מבצע זמין'}. חסכו ₪${totalSavings.toFixed(2)} לעומת מחיר רגיל.`,
+    description: `${cheapestPromo.promoDescription ?? 'מחיר מבצע זמין'}. חסכו ₪${totalSavings.toFixed(2)} לעומת ${compareName}.`,
     impact: {
       savingsAmount: round2(totalSavings),
-      percentage: Math.round((savingsPerUnit / cheapestRegular.price) * 100),
+      percentage: Math.round((savingsPerUnit / comparePrice) * 100),
     },
     affectedItems: [item.id],
     action: {
@@ -272,6 +300,49 @@ function findConstraintRelaxations(
   return recommendations;
 }
 
+// ── Quantity Parsing ──
+
+/**
+ * Extract quantity from promo description text.
+ * Handles Hebrew and English patterns:
+ * - "2 ב-10 ש"ח" → 2
+ * - "3 יח' ב-12₪" → 3
+ * - "קנה 2 קבל 1" → 2
+ * - "buy 2 get 1" → 2
+ * - "3 for ₪10" → 3
+ * - "1+1" → 2
+ */
+export function parseQuantityFromPromo(desc: string): number | null {
+  if (!desc) return null;
+
+  const patterns: { regex: RegExp; group: number; transform?: (n: number) => number }[] = [
+    // "1+1" pattern → 2
+    { regex: /(\d)\s*\+\s*(\d)/, group: 0, transform: () => 2 },
+    // Hebrew: "2 ב-" or "2 ב " (2 for ...)
+    { regex: /(\d+)\s*ב[-\s]/, group: 1 },
+    // Hebrew: "קנה 2" or "קנו 3" (buy 2/3)
+    { regex: /קנ[הו]\s*(\d+)/, group: 1 },
+    // Hebrew: "3 יח'" (3 units)
+    { regex: /(\d+)\s*יח[׳']/, group: 1 },
+    // English: "buy 2" or "Buy 3"
+    { regex: /buy\s*(\d+)/i, group: 1 },
+    // English: "3 for"
+    { regex: /(\d+)\s*for/i, group: 1 },
+  ];
+
+  for (const { regex, group, transform } of patterns) {
+    const match = desc.match(regex);
+    if (match) {
+      const raw = parseInt(match[group === 0 ? 1 : group]);
+      if (!isNaN(raw) && raw >= 2) {
+        return transform ? transform(raw) : raw;
+      }
+    }
+  }
+
+  return null;
+}
+
 // ── Quantity Suggestions ──
 
 function findQuantitySuggestions(
@@ -294,14 +365,12 @@ function findQuantitySuggestions(
   const recommendations: Recommendation[] = [];
 
   for (const promo of promoProducts) {
-    // Heuristic: if promo mentions "buy 2" or "3 for" etc., suggest increasing qty
-    const desc = (promo.promoDescription ?? '').toLowerCase();
-    const buyMorePattern = /buy\s*(\d+)|(\d+)\s*for/;
-    const match = desc.match(buyMorePattern);
-
-    if (!match) continue;
-    const suggestedQty = parseInt(match[1] ?? match[2]);
-    if (isNaN(suggestedQty) || suggestedQty <= item.quantity) continue;
+    // Heuristic: if promo mentions quantity deals, suggest increasing qty
+    // Supports Hebrew patterns: "2 ב-10", "3 יח' ב-12", "קנה 2", etc.
+    // Also supports English: "buy 2", "3 for"
+    const desc = promo.promoDescription ?? '';
+    const suggestedQty = parseQuantityFromPromo(desc);
+    if (suggestedQty === null || suggestedQty <= item.quantity) continue;
 
     // Estimate savings: compare cost of suggestedQty at promo vs regular
     const regularProducts = allProducts.filter(
@@ -359,12 +428,14 @@ export function generateRecommendations(
   for (const item of items) {
     const current = currentResolutions.get(item.id) ?? null;
     all.push(...findCheaperAlternatives(item, current, products, supermarket));
-    all.push(...findPromoOpportunities(item, products, supermarket));
+    all.push(...findPromoOpportunities(item, products, supermarket, current));
     all.push(...findConstraintRelaxations(item, current, products, supermarket));
     all.push(...findQuantitySuggestions(item, products, supermarket));
   }
 
-  // Sort by savings desc, deduplicate by affected item + type
+  // Sort by savings first, THEN deduplicate (keep the best per item+type)
+  all.sort((a, b) => b.impact.savingsAmount - a.impact.savingsAmount);
+
   const seen = new Set<string>();
   const deduped = all.filter((r) => {
     const key = `${r.affectedItems[0]}_${r.type}`;
@@ -373,7 +444,6 @@ export function generateRecommendations(
     return true;
   });
 
-  deduped.sort((a, b) => b.impact.savingsAmount - a.impact.savingsAmount);
   return deduped;
 }
 
@@ -498,6 +568,106 @@ export function optimizeBasket(
     savingsPercentage,
     items: optimizedItems,
     recommendations: recommendations.slice(0, 5),
+  };
+}
+
+// ── Split-Cart: Cross-Supermarket Optimization ──
+
+export interface SupermarketProducts {
+  supermarket: SupermarketForOptimization;
+  products: ProductForOptimization[];
+}
+
+/**
+ * Find the cheapest possible basket by picking the best supermarket per item.
+ * This is the "split-cart" strategy — buy each item where it's cheapest.
+ * Pure function — no DB dependency.
+ */
+export function splitCartOptimization(
+  items: BasketItemForOptimization[],
+  allSupermarkets: SupermarketProducts[],
+  bestSingleTotal: number
+): SplitCartResult | null {
+  if (allSupermarkets.length < 2) return null;
+
+  const splitItems: SplitCartItem[] = [];
+  let totalCost = 0;
+
+  for (const item of items) {
+    let bestProduct: ProductForOptimization | null = null;
+    let bestSupermarket: SupermarketForOptimization | null = null;
+    let bestPrice = Infinity;
+
+    for (const { supermarket, products } of allSupermarkets) {
+      const candidates = products.filter(
+        (p) =>
+          p.canonicalProduct.categoryId === item.categoryId &&
+          p.inStock &&
+          passesConstraints(p.canonicalProduct.metadata, item.userConstraints)
+      );
+
+      if (candidates.length === 0) continue;
+
+      // Sort by optimization score (accounts for promo bonus + attribute penalties)
+      candidates.sort((a, b) => optimizationScore(a, item) - optimizationScore(b, item));
+      const best = candidates[0];
+
+      if (best.price < bestPrice) {
+        bestPrice = best.price;
+        bestProduct = best;
+        bestSupermarket = supermarket;
+      }
+    }
+
+    if (bestProduct && bestSupermarket) {
+      const itemTotal = round2(bestPrice * item.quantity);
+      splitItems.push({
+        basketItemId: item.id,
+        displayName: item.displayName,
+        supermarketId: bestSupermarket.id,
+        supermarketName: bestSupermarket.name,
+        productName: bestProduct.externalName,
+        unitPrice: bestPrice,
+        quantity: item.quantity,
+        totalPrice: itemTotal,
+        isPromo: bestProduct.isPromo,
+        promoEndDate: bestProduct.promoEndDate,
+      });
+      totalCost += itemTotal;
+    }
+  }
+
+  totalCost = round2(totalCost);
+  const savingsVsBest = round2(bestSingleTotal - totalCost);
+
+  // Only suggest split-cart if it actually saves money
+  if (savingsVsBest < 0.50) return null;
+
+  // Build supermarket breakdown
+  const breakdownMap = new Map<string, { supermarketId: string; supermarketName: string; itemCount: number; subtotal: number }>();
+  for (const si of splitItems) {
+    const existing = breakdownMap.get(si.supermarketId);
+    if (existing) {
+      existing.itemCount++;
+      existing.subtotal = round2(existing.subtotal + si.totalPrice);
+    } else {
+      breakdownMap.set(si.supermarketId, {
+        supermarketId: si.supermarketId,
+        supermarketName: si.supermarketName,
+        itemCount: 1,
+        subtotal: si.totalPrice,
+      });
+    }
+  }
+
+  // Only return if items are actually split across 2+ supermarkets
+  if (breakdownMap.size < 2) return null;
+
+  return {
+    items: splitItems,
+    totalCost,
+    savingsVsBest,
+    supermarketBreakdown: Array.from(breakdownMap.values()),
   };
 }
 

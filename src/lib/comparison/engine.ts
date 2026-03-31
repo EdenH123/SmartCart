@@ -27,6 +27,7 @@ export interface SupermarketProductForComparison {
   inStock: boolean;
   isPromo: boolean;
   promoDescription: string | null;
+  promoEndDate: string | null;
   metadata: Record<string, unknown>;
   priceTimestamp: string | null;
   canonicalProduct: {
@@ -92,9 +93,10 @@ function resolveExact(
       unitPrice: null,
       totalPrice: null,
       wasSubstituted: false,
-      substitutionReason: 'Exact product unavailable at this supermarket',
+      substitutionReason: 'המוצר המבוקש לא זמין בסופרמרקט זה',
       isPromo: false,
       promoDescription: null,
+      promoEndDate: null,
       priceTimestamp: null,
     };
   }
@@ -112,6 +114,7 @@ function resolveExact(
     substitutionReason: null,
     isPromo: exactMatch.isPromo,
     promoDescription: exactMatch.promoDescription,
+    promoEndDate: exactMatch.promoEndDate,
     priceTimestamp: exactMatch.priceTimestamp,
   };
 }
@@ -139,9 +142,10 @@ function resolveFlexible(
       unitPrice: null,
       totalPrice: null,
       wasSubstituted: false,
-      substitutionReason: 'No matching products available at this supermarket',
+      substitutionReason: 'אין מוצרים מתאימים בסופרמרקט זה',
       isPromo: false,
       promoDescription: null,
+      promoEndDate: null,
       priceTimestamp: null,
     };
   }
@@ -156,7 +160,8 @@ function resolveFlexible(
     ),
   }));
 
-  // Sort: prefer exact canonical match, then highest score, then lowest price
+  // Sort: prefer exact canonical match, then highest score, then lowest price.
+  // At equal price, prefer promo products (better value).
   scored.sort((a, b) => {
     if (item.selectedCanonicalProductId) {
       const aIsExact = a.product.canonicalProductId === item.selectedCanonicalProductId;
@@ -165,7 +170,11 @@ function resolveFlexible(
       if (!aIsExact && bIsExact) return 1;
     }
     if (b.score.total !== a.score.total) return b.score.total - a.score.total;
-    return a.product.price - b.product.price;
+    if (a.product.price !== b.product.price) return a.product.price - b.product.price;
+    // At equal price, prefer promo products
+    if (a.product.isPromo && !b.product.isPromo) return -1;
+    if (!a.product.isPromo && b.product.isPromo) return 1;
+    return 0;
   });
 
   const chosen = scored[0].product;
@@ -178,7 +187,8 @@ function resolveFlexible(
   if (wasSubstituted) {
     substitutionReason = buildSubstitutionReason(chosen, constraints);
   } else if (isFlexible && !item.selectedCanonicalProductId) {
-    substitutionReason = `Cheapest matching option: ${chosen.externalName}`;
+    const promoNote = chosen.isPromo ? ' (במבצע)' : '';
+    substitutionReason = `האפשרות הזולה ביותר: ${chosen.externalName}${promoNote}`;
   }
 
   const resolutionType: ResolutionType = wasSubstituted ? 'flexible_match' : 'exact';
@@ -196,22 +206,17 @@ function resolveFlexible(
     substitutionReason,
     isPromo: chosen.isPromo,
     promoDescription: chosen.promoDescription,
+    promoEndDate: chosen.promoEndDate,
     priceTimestamp: chosen.priceTimestamp,
   };
 }
 
 function buildSubstitutionReason(
   chosen: SupermarketProductForComparison,
-  constraints: UserConstraints
+  _constraints: UserConstraints
 ): string {
-  const parts: string[] = [];
-  for (const [key, value] of Object.entries(constraints)) {
-    if (value && value !== 'any') {
-      parts.push(`${key}: ${value}`);
-    }
-  }
-  const constraintStr = parts.length > 0 ? ` matching ${parts.join(', ')}` : '';
-  return `Substituted with ${chosen.externalName}${constraintStr} (cheaper alternative)`;
+  const promoNote = chosen.isPromo ? ' (במבצע)' : '';
+  return `הוחלף ל${chosen.externalName}${promoNote} (חלופה זולה יותר)`;
 }
 
 /**

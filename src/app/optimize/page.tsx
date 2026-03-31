@@ -11,10 +11,11 @@ import {
   CheckCircle,
   ArrowRight,
   Lightbulb,
+  Split,
 } from 'lucide-react';
 import { optimizeBasketAction } from '@/lib/actions';
-import { formatPrice } from '@/lib/utils';
-import type { OptimizationResult, Recommendation } from '@/types';
+import { formatPrice, formatPromoExpiry } from '@/lib/utils';
+import type { OptimizationResult, Recommendation, SplitCartResult } from '@/types';
 
 export default function OptimizePage() {
   return (
@@ -249,6 +250,11 @@ function OptimizePageInner() {
         </div>
       )}
 
+      {/* Split-Cart Suggestion */}
+      {result.splitCart && (
+        <SplitCartSection splitCart={result.splitCart} />
+      )}
+
       {/* Actions */}
       <div className="mt-8 flex gap-3">
         <Link
@@ -296,6 +302,62 @@ function RecommendationCard({ recommendation }: { recommendation: Recommendation
             <p className="text-xs opacity-70">{recommendation.impact.percentage}% הנחה</p>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function SplitCartSection({ splitCart }: { splitCart: SplitCartResult }) {
+  return (
+    <div className="mt-8">
+      <div className="flex items-center gap-2">
+        <Split className="h-5 w-5 text-brand-600" />
+        <h2 className="text-lg font-semibold text-gray-900">פיצול סל בין סופרמרקטים</h2>
+      </div>
+      <p className="mt-1 text-sm text-gray-500">
+        קנו כל מוצר בסופרמרקט הזול ביותר וחסכו עוד {formatPrice(splitCart.savingsVsBest)}
+      </p>
+
+      {/* Supermarket breakdown */}
+      <div className="mt-4 flex flex-wrap gap-3">
+        {splitCart.supermarketBreakdown.map((sm) => (
+          <div key={sm.supermarketId} className="card p-3 flex-1 min-w-[140px]">
+            <p className="font-medium text-gray-900 text-sm">{sm.supermarketName}</p>
+            <p className="text-xs text-gray-500">{sm.itemCount} פריטים</p>
+            <p className="mt-1 text-base font-bold text-gray-900">{formatPrice(sm.subtotal)}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Per-item breakdown */}
+      <div className="mt-4 card divide-y">
+        {splitCart.items.map((item) => (
+          <div key={item.basketItemId} className="flex items-center justify-between px-4 py-2.5 text-sm">
+            <div className="min-w-0 flex-1">
+              <span className="text-gray-900">{item.displayName}</span>
+              {item.quantity > 1 && <span className="text-gray-400 mr-1">x{item.quantity}</span>}
+              <span className="text-gray-400 mr-2">← {item.supermarketName}</span>
+              {item.isPromo && <span className="badge-promo text-[10px]">מבצע</span>}
+              {item.isPromo && item.promoEndDate && (() => {
+                const expiry = formatPromoExpiry(item.promoEndDate);
+                if (!expiry) return null;
+                const end = new Date(item.promoEndDate);
+                const isUrgent = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) <= 3;
+                return (
+                  <span className={`text-[10px] ${isUrgent ? 'text-red-500' : 'text-amber-600'}`}>
+                    ({expiry})
+                  </span>
+                );
+              })()}
+            </div>
+            <span className="font-medium text-gray-900 whitespace-nowrap">{formatPrice(item.totalPrice)}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-3 flex items-center justify-between rounded-lg bg-brand-50 p-3">
+        <span className="text-sm font-medium text-brand-800">סה״כ עם פיצול סל</span>
+        <span className="text-lg font-bold text-brand-800">{formatPrice(splitCart.totalCost)}</span>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db/client';
 import { searchCategories, searchProducts, getAllCategories, getCategory } from '@/lib/products/search';
 import { compareBasket } from '@/lib/comparison/engine';
-import { optimizeBasket as optimizeBasketEngine } from '@/lib/recommendations';
+import { optimizeBasket as optimizeBasketEngine, splitCartOptimization } from '@/lib/recommendations';
 import { createLogger } from '@/lib/logger';
 import type {
   BasketItemDTO,
@@ -262,6 +262,7 @@ export async function compareBasketAction(basketId: string): Promise<ComparisonR
     inStock: boolean;
     isPromo: boolean;
     promoDescription: string | null;
+    promoEndDate: string | null;
     metadata: Record<string, unknown>;
     priceTimestamp: string | null;
     canonicalProduct: {
@@ -282,6 +283,7 @@ export async function compareBasketAction(basketId: string): Promise<ComparisonR
         const price = latestSnapshot?.price ?? p.price;
         const isPromo = latestSnapshot?.isPromo ?? p.isPromo;
         const promoDescription = latestSnapshot?.promoDescription ?? p.promoDescription;
+        const promoEndDate = p.promoEndDate?.toISOString() ?? null;
         const inStock = latestSnapshot?.inStock ?? p.inStock;
         const priceTimestamp = latestSnapshot?.capturedAt?.toISOString() ?? p.updatedAt.toISOString();
 
@@ -295,6 +297,7 @@ export async function compareBasketAction(basketId: string): Promise<ComparisonR
           inStock,
           isPromo,
           promoDescription,
+          promoEndDate,
           metadata: JSON.parse(p.metadata) as Record<string, unknown>,
           priceTimestamp,
           canonicalProduct: {
@@ -399,6 +402,7 @@ export async function optimizeBasketAction(basketId: string): Promise<Optimizati
       inStock: latestSnapshot?.inStock ?? p.inStock,
       isPromo: latestSnapshot?.isPromo ?? p.isPromo,
       promoDescription: latestSnapshot?.promoDescription ?? p.promoDescription,
+      promoEndDate: p.promoEndDate?.toISOString() ?? null,
       canonicalProduct: {
         id: p.canonicalProduct.id,
         categoryId: p.canonicalProduct.categoryId,
@@ -439,6 +443,56 @@ export async function optimizeBasketAction(basketId: string): Promise<Optimizati
   );
   result.basketId = basketId;
 
+  // Run split-cart optimization across all supermarkets
+  const allSupermarkets = await prisma.supermarket.findMany({
+    where: { isActive: true },
+  });
+
+  if (allSupermarkets.length >= 2) {
+    const allSmProducts = await Promise.all(
+      allSupermarkets.map(async (sm) => {
+        const smProds = await prisma.supermarketProduct.findMany({
+          where: { supermarketId: sm.id },
+          include: {
+            canonicalProduct: true,
+            priceSnapshots: { orderBy: { capturedAt: 'desc' }, take: 1 },
+          },
+        });
+        return {
+          supermarket: { id: sm.id, name: sm.name, slug: sm.slug },
+          products: smProds.map((p) => {
+            const snap = p.priceSnapshots[0];
+            return {
+              id: p.id,
+              supermarketId: p.supermarketId,
+              canonicalProductId: p.canonicalProductId,
+              externalName: p.externalName,
+              brand: p.brand,
+              price: snap?.price ?? p.price,
+              inStock: snap?.inStock ?? p.inStock,
+              isPromo: snap?.isPromo ?? p.isPromo,
+              promoDescription: snap?.promoDescription ?? p.promoDescription,
+              promoEndDate: p.promoEndDate?.toISOString() ?? null,
+              canonicalProduct: {
+                id: p.canonicalProduct.id,
+                categoryId: p.canonicalProduct.categoryId,
+                name: p.canonicalProduct.name,
+                brand: p.canonicalProduct.brand,
+                metadata: JSON.parse(p.canonicalProduct.metadata) as Record<string, unknown>,
+              },
+            };
+          }),
+        };
+      })
+    );
+
+    result.splitCart = splitCartOptimization(
+      itemsForOptimization,
+      allSmProducts,
+      result.optimizedTotal
+    );
+  }
+
   const durationMs = Date.now() - startTime;
   log.info('Optimization completed', {
     basketId,
@@ -446,6 +500,7 @@ export async function optimizeBasketAction(basketId: string): Promise<Optimizati
     originalTotal: result.originalTotal,
     optimizedTotal: result.optimizedTotal,
     savings: result.savings,
+    splitCartSavings: result.splitCart?.savingsVsBest ?? 0,
     durationMs,
   });
 

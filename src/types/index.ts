@@ -82,6 +82,7 @@ export interface ItemResolution {
   substitutionReason: string | null;
   isPromo: boolean;
   promoDescription: string | null;
+  promoEndDate: string | null;
   priceTimestamp: string | null;
 }
 
@@ -173,4 +174,27 @@ export interface OptimizationResult {
   savingsPercentage: number;
   items: OptimizedItem[];
   recommendations: Recommendation[];
+  splitCart?: SplitCartResult | null;
+}
+
+// ── Split-Cart (cross-supermarket optimization) ──
+
+export interface SplitCartItem {
+  basketItemId: string;
+  displayName: string;
+  supermarketId: string;
+  supermarketName: string;
+  productName: string;
+  unitPrice: number;
+  quantity: number;
+  totalPrice: number;
+  isPromo: boolean;
+  promoEndDate: string | null;
+}
+
+export interface SplitCartResult {
+  items: SplitCartItem[];
+  totalCost: number;
+  savingsVsBest: number; // savings vs best single supermarket
+  supermarketBreakdown: { supermarketId: string; supermarketName: string; itemCount: number; subtotal: number }[];
 }
